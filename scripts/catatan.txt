@@ -1,0 +1,47 @@
+PERTANYAAN :
+
+1. APAKAH PROBLEM LMI ITU BISA DISELESAIKAN DENGAN CONVEX OPTIMIZATION ALGORITHM (CVXPY --> MENANGANI CONVEX OPTIMIZATION PROBLEM)
+2. BAGAIMANA MAKSUD PERSAMAAN 6 JIKA DIKAITKAN DENGAN PERSAMAAN 10 --> Jk(Z)
+3. KETIKA MENCOBA MENGANALISA KESTABILAN MATRIKS A HASIL LPV KINEMATIC, TERNYATA GA STABIL --> APAKAH ADA YG SALAH ATAU NORMAL KRN BELOM DIKONTROL ?
+
+
+INFO DARI CHATGPT :
+
+=========================
+PERTANYAAN
+=========================
+Jika saya mengubah constraintnya, sehingga jadi 
+
+constraints = [lmi>=(0.2*np.eye(11)), Y>>0]
+obj = cp.Minimize(0)
+problem = cp.Problem(obj, constraints)
+
+Output :
+Optimal value:  0.0
+Y = 
+[[3.14626608e-01 7.39329976e-02 6.59877512e-05]
+ [7.39329976e-02 2.94961889e-01 2.28717695e-04]
+ [6.59877512e-05 2.28717695e-04 3.15024893e-01]]
+Wi = 
+[[2.97562826e-02 4.37801785e-03 4.59587148e-06]
+ [9.13832357e-06 3.16746553e-05 3.10370972e-02]]
+
+artinya ada nilainya. Bagaimana penjelasannya ??
+
+dan apakah dengan mengubah dari lmi>>0 menjadi lmi>=(0.2*np.eye(11)) tetap menunjukkan ketentuan bahwa lmi harus definit positif ?
+
+=========================
+ChatGPT
+=========================
+Dengan mengubah batasan dari lmi >> 0 menjadi lmi >= (0.2*np.eye(11)), Anda memberikan batasan yang lebih spesifik pada matriks lmi. Dalam hal ini, Anda membatasi matriks lmi untuk menjadi positif semidefinite (atau lebih umumnya, lebih besar atau sama dengan 0.2 kali matriks identitas).
+
+Penjelasan output yang Anda dapatkan setelah mengubah batasan adalah sebagai berikut:
+
+Optimal value: 0.0: Seperti sebelumnya, nilai objektif yang optimal adalah 0, menunjukkan bahwa solver memenuhi semua batasan tanpa memperhatikan nilai objektif tertentu.
+
+Matriks Y dan Wi dengan nilai yang tidak nol: Kini, solver memberikan nilai yang tidak nol untuk matriks Y dan Wi. Ini menunjukkan bahwa solver berhasil menemukan matriks yang memenuhi batasan-batasan yang diberikan, dalam hal ini, lmi >= (0.2*np.eye(11)) dan Y >> 0.
+
+Tentang lmi >= (0.2*np.eye(11)): Ya, dengan mengganti lmi >> 0 menjadi lmi >= (0.2*np.eye(11)), Anda tetap mengesahkan bahwa matriks lmi harus positif semidefinite, tetapi dengan batasan tambahan bahwa setiap elemen di lmi harus lebih besar atau sama dengan 0.2 dikalikan dengan matriks identitas.
+
+Secara keseluruhan, perubahan batasan memberikan solver kebebasan untuk menemukan matriks lmi, Y, dan Wi yang memenuhi kriteria yang lebih spesifik, dan hasilnya adalah matriks dengan nilai yang sesuai.
+

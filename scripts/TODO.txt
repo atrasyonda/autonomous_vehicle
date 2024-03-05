@@ -1,0 +1,5 @@
+Struktur Node 
+
+Publisher --> Kinematic --> LMI --> MPC
+Publisher --> Dynamic --> LMI --> LQR
+
