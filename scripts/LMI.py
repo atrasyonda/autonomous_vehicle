@@ -1,6 +1,8 @@
 import cvxpy as cp
 import numpy as np
 
+# menambahkan baris
+
 n = 3  # number of states
 m = 2  # number of inputs
 # Ai=np.random.randint(1,5,(3,3)) #state matrix --> Jumlah Ai nanti ada 8 (sesuai Ac_pk A0 - A7)
