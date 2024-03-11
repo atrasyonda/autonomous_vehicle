@@ -1,0 +1,30 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${default}",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/opt/ros/noetic/include/**",
+        "/home/atras/ros/catkin_ws/devel/include/**",
+        "/home/atras/ros/catkin_ws/src/robot_model_pkg/RoboticsInfrastructure/CustomRobots/amazon_robot/amazon_robot_gazebo/include/**",
+        "/home/atras/ros/catkin_ws/src/atras_exercise/include/**",
+        "/home/atras/ros/catkin_ws/src/autonomous_vehicle/include/**",
+        "/home/atras/ros/catkin_ws/src/robot_model_pkg/RoboticsInfrastructure/CustomRobots/SelfDrivingModels/catvehicle_basics/catvehicle/include/**",
+        "/home/atras/ros/catkin_ws/src/robot_model_pkg/RoboticsInfrastructure/CustomRobots/SelfDrivingModels/catvehicle_basics/control_toolbox/include/**",
+        "/home/atras/ros/catkin_ws/src/hypharos_minicar/include/**",
+        "/home/atras/ros/catkin_ws/src/robot_model_pkg/RoboticsInfrastructure/CustomRobots/SelfDrivingModels/lusb/include/**",
+        "/home/atras/ros/catkin_ws/src/robot_model_pkg/robot_custom/include/**",
+        "/home/atras/ros/catkin_ws/src/robot_model_pkg/RoboticsInfrastructure/CustomRobots/SelfDrivingModels/catvehicle_basics/sicktoolbox/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS",
+      "intelliSenseMode": "gcc-x64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++14"
+    }
+  ],
+  "version": 4
+}

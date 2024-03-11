@@ -30,6 +30,17 @@ class LPV:
         nu1_xrdot= 1-nu0_xrdot
         nu0_psi= (psi_max-psi)/(psi_max-psi_min)
         nu1_psi= 1-nu0_psi
+        
+        miu_pk = [
+            [nu0_psidot*nu0_xrdot*nu0_psi],
+            [nu0_psidot*nu0_xrdot*nu1_psi],
+            [nu0_psidot*nu1_xrdot*nu0_psi],
+            [nu0_psidot*nu1_xrdot*nu1_psi],
+            [nu1_psidot*nu0_xrdot*nu0_psi],
+            [nu1_psidot*nu0_xrdot*nu1_psi],
+            [nu1_psidot*nu1_xrdot*nu0_psi],
+            [nu1_psidot*nu1_xrdot*nu1_psi],
+        ]
 
         A0=np.array([
             [1, psi_dot_min*Tc, 0],
@@ -73,19 +84,9 @@ class LPV:
         ])
         Ac_pk = [A0, A1, A2, A3, A4, A5, A6, A7]
 
-        miu = [
-            [nu0_psidot*nu0_xrdot*nu0_psi],
-            [nu0_psidot*nu0_xrdot*nu1_psi],
-            [nu0_psidot*nu1_xrdot*nu0_psi],
-            [nu0_psidot*nu1_xrdot*nu1_psi],
-            [nu1_psidot*nu0_xrdot*nu0_psi],
-            [nu1_psidot*nu0_xrdot*nu1_psi],
-            [nu1_psidot*nu1_xrdot*nu0_psi],
-            [nu1_psidot*nu1_xrdot*nu1_psi],
-        ]
         Ac=0
         for i in range(8):
-            Ac+=(Ac_pk[i]*miu[i])
+            Ac+=(Ac_pk[i]*miu_pk[i])
         Bc= np.array([
             [-Tc,0],
             [0,0],
@@ -121,7 +122,7 @@ class LPV:
         nu0_ydot= (y_dot_max-y_dot)/(y_dot_max-y_dot_min)
         nu1_ydot= 1-nu0_ydot
 
-        miu_pk = [
+        miu_vk = [
             [nu0_delta*nu0_xdot*nu0_ydot],
             [nu0_delta*nu0_xdot*nu1_ydot],
             [nu0_delta*nu1_xdot*nu0_ydot],
@@ -173,10 +174,10 @@ class LPV:
             [0, (-(Caf*lf*np.cos(delta_max)-Car*lr)/(I*x_dot_max))*Td, 1+(-(Caf*(lf**2)*np.cos(delta_max)-Car*lr**2)/(I*x_dot_max))*Td]
         ])
         
-        Ad_pk=[A0,A1,A2,A3,A4,A5,A6,A7]
+        Ad_vk=[A0,A1,A2,A3,A4,A5,A6,A7]
         Ad=0
         for i in range(8):
-            Ad+=(Ad_pk[i]*miu_pk[i])
+            Ad+=(Ad_vk[i]*miu_vk[i])
         
         # print (Ad)
         Bd= np.array([
@@ -186,7 +187,7 @@ class LPV:
         ])
         # log_message = "Nilai x_dot: %s, Nilai y_dot: %s, Nilai delta: %s" % (x_dot, y_dot,delta)
         # rospy.loginfo(log_message)
-        return Ad,Ad_pk,Bd
+        return Ad,Ad_vk,Bd,miu_vk
 
 class LMI:
     def __init__(self) -> None:
@@ -231,7 +232,77 @@ class LMI:
                 print("Problem not solved")
                 print("Status:", problem.status)
         return outputKi,outputP
-    
+    def getLQR() :
+        # menambahkan baris
+        n = 3  # number of states
+        m = 2  # number of inputs
+        # Ai=np.random.randint(1,5,(3,3)) #state matrix --> Jumlah Ai nanti ada 8 (sesuai Ac_pk A0 - A7)
+        B = np.array([[-0.1,0],[0,0],[0,-0.1]]) # input matrix
+        Qts = 0.9*np.diag([0.66, 0.01, 0.33])  # state weight matrix --> JURNAL
+        Rts = 0.1*np.diag([0.5, 0.5])  # input weight matrix --> JURNAL
+        invRts= np.linalg.inv(Rts)
+        invQts= np.linalg.inv(Qts)
+        Y = cp.Variable((n, n),symmetric=True)
+        Wi = cp.Variable((m, n)) # Solusi bobot untuk kontroler bds Ai --> nanti dibuat loop untuk dapat W0 - W7
+
+        A0 = np.array([[0.43896, -247.10937926, -24.72093793],
+                    [0.0, -370.31859311, 94.86714069],
+                    [0.0, 23.71703517, 3.37170352]])
+        A1 = np.array([[0.43896, -247.10937926, -24.70093793],
+                    [0.0, -370.31859311, 94.86714069],
+                    [0.0, 23.71703517, 3.37170352]])
+        A2 = np.array([[-13.21045, -1.2355469, -0.13355469],
+                    [0.0, -0.85659297, 0.2743407],
+                    [0.0, 0.11858518, 1.01185852]])
+        A3 = np.array([[-13.21045, -1.2355469, -0.11355469],
+                    [0.0, -0.85659297, 0.2743407],
+                    [0.0, 0.11858518, 1.01185852]])
+        A4 = np.array([[0.43896, 247.10937926, 24.70093793],
+                    [0.0, -370.31859311, 94.86714069],
+                    [0.0, 23.71703517, 3.37170352]])
+        A5 = np.array([[0.43896, 247.10937926, 24.72093793],
+                    [0.0, -370.31859311, 94.86714069],
+                    [0.0, 23.71703517, 3.37170352]])
+        A6 = np.array([[-13.21045, 1.2355469, 0.11355469],
+                    [0.0, -0.85659297, 0.2743407],
+                    [0.0, 0.11858518, 1.01185852]])
+        A7 = np.array([[-13.21045, 1.2355469, 0.13355469],
+                    [0.0, -0.85659297, 0.2743407],
+                    [0.0, 0.11858518, 1.01185852]])
+        Ad_vk = [A0, A1, A2, A3, A4, A5, A6, A7]
+
+        outputKi=[]
+
+        for i, element in enumerate(Ad_vk):
+            # print(f"Indeks {i}: {element}")
+            Ai = element
+            # print("A", i, " = ", Ai)
+            # print ("====== ITERASI KE -", i+1 , " ======")
+            Z = Ai@Y+B@Wi
+            lmi = cp.vstack([
+                cp.hstack([Y, Z.T ,Y, Wi.T]), #baris 1
+                cp.hstack([Z, Y, np.zeros([3,3]), np.zeros([3,2])]), #baris 2
+                cp.hstack([Y, np.zeros([3,3]), invQts, np.zeros([3,2])]), #baris 3
+                cp.hstack([Wi, np.zeros([2,3]), np.zeros([2,3]), invRts]) #baris 4
+                ])
+            constraints = [lmi>=(0.3*np.eye(11)), Y>>0] # lmi definit positif dgn batasan lebih spesifik agar nilai Y dan Wi tidak nol
+            obj = cp.Minimize(0)
+            problem = cp.Problem(obj, constraints)
+            print("Solving problem")
+            problem.solve(solver=cp.SCS)
+
+            if problem.status == cp.OPTIMAL:
+                print("Optimal value: ", problem.value)
+                print("Y = ", Y.value)
+                print("Wi = " , Wi.value)
+                Ki = Wi.value@np.linalg.inv(Y.value)
+                print("Ki = ", Ki)
+                outputKi.append(Ki)
+            else:
+                print("Problem not solved")
+                print("Status:", problem.status)
+        print ("Output Ki : ", outputKi)    
+
 class MPC :
     def __init__(self) -> None:
         pass
