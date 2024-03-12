@@ -71,6 +71,5 @@ for i, element in enumerate(Ad_vk):
         print("Problem not solved")
         print("Status:", problem.status)
 print ("Output Ki : ", outputKi)
-print ("Ukuran Ki : ", outputKi[1].shape)
 
 

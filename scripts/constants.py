@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import numpy as np
 
+n = 3  # number of states
+m = 2  # number of inputs
 Tc=0.1      # time sampling for kinematic control 
 Td=0.01     # time sampling for dynamic control 
 # car constants
@@ -16,6 +18,7 @@ Cd = 20     # koefisien drag
 Af = 30     # front sectional area of the vehicle
 miu = 0.5   # koefisien gesekan
 g = 9.8     # konstanta gravitasi
+
 # schedulling vector variable
 psi_dot_min= -1.42  # batas bawah kecepatan anguler (rad/s)
 psi_dot_max= 1.42   # batas atas kecepatan anguler (rad/s)
@@ -42,5 +45,8 @@ y_dot = 0
 delta = 0
 
 
-Qts = np.diag([1,1,3])  # state weight matrix --> JURNAL
-Rts = np.diag([1,3])  # input weight matrix --> JURNAL
+Q_k = np.diag([1,1,3])  # kinematic control state weight matrix --> JURNAL
+R_k = np.diag([1,3])  # kinematic control input weight matrix --> JURNAL
+
+Q_d = 0.9*np.diag([0.66, 0.01, 0.33])  # dynamic control state weight matrix --> JURNAL
+R_d = 0.1*np.diag([0.5, 0.5])  # dynamic control input weight matrix --> JURNAL
