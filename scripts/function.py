@@ -13,29 +13,7 @@ from constants import *
 class Kinematic:
     def __init__(self) -> None:
         pass
-    def getLPV(car:state):
-        xr_dot = car.xr_dot
-        psi_dot= car.psi_dot
-        psi=car.psi
-
-        nu0_psidot= (psi_dot_max-psi_dot)/(psi_dot_max-psi_dot_min)
-        nu1_psidot= 1-nu0_psidot
-        nu0_xrdot= (xr_dot_max-xr_dot)/(xr_dot_max-xr_dot_min)
-        nu1_xrdot= 1-nu0_xrdot
-        nu0_psi= (psi_max-psi)/(psi_max-psi_min)
-        nu1_psi= 1-nu0_psi
-        
-        miu_pk = [
-            [nu0_psidot*nu0_xrdot*nu0_psi],
-            [nu0_psidot*nu0_xrdot*nu1_psi],
-            [nu0_psidot*nu1_xrdot*nu0_psi],
-            [nu0_psidot*nu1_xrdot*nu1_psi],
-            [nu1_psidot*nu0_xrdot*nu0_psi],
-            [nu1_psidot*nu0_xrdot*nu1_psi],
-            [nu1_psidot*nu1_xrdot*nu0_psi],
-            [nu1_psidot*nu1_xrdot*nu1_psi],
-        ]
-
+    def getModel():
         A0=np.array([
             [1, psi_dot_min*Tc, 0],
             [-psi_dot_min*Tc, 1, xr_dot_min*np.sin(psi_min)*Tc/psi_min],
@@ -76,26 +54,51 @@ class Kinematic:
             [-psi_dot_max*Tc, 1, xr_dot_max*np.sin(psi_max)*Tc/psi_max],
             [0, 0, 1]
         ])
-        Ac_pk = [A0, A1, A2, A3, A4, A5, A6, A7]
-
-        Ac=0
-        for i in range(8):
-            Ac+=(Ac_pk[i]*miu_pk[i])
+        Ac_pk = np.array([A0, A1, A2, A3, A4, A5, A6, A7])
         Bc= np.array([
             [-Tc,0],
             [0,0],
             [0,-Tc]
         ])
+        return Ac_pk, Bc
 
-        return Ac,Ac_pk,Bc
+
+    def getLPV(car:state, Ac_pk):
+        xr_dot = car.xr_dot
+        psi_dot= car.psi_dot
+        psi=car.psi
+
+        nu0_psidot= (psi_dot_max-psi_dot)/(psi_dot_max-psi_dot_min)
+        nu1_psidot= 1-nu0_psidot
+        nu0_xrdot= (xr_dot_max-xr_dot)/(xr_dot_max-xr_dot_min)
+        nu1_xrdot= 1-nu0_xrdot
+        nu0_psi= (psi_max-psi)/(psi_max-psi_min)
+        nu1_psi= 1-nu0_psi
+        
+        miu_pk = np.array([
+            [nu0_psidot*nu0_xrdot*nu0_psi],
+            [nu0_psidot*nu0_xrdot*nu1_psi],
+            [nu0_psidot*nu1_xrdot*nu0_psi],
+            [nu0_psidot*nu1_xrdot*nu1_psi],
+            [nu1_psidot*nu0_xrdot*nu0_psi],
+            [nu1_psidot*nu0_xrdot*nu1_psi],
+            [nu1_psidot*nu1_xrdot*nu0_psi],
+            [nu1_psidot*nu1_xrdot*nu1_psi],
+        ])
+        Ac=0
+        for i in range(2**n):
+            Ac+=(Ac_pk[i]*miu_pk[i])
+        return Ac
+    
     def getMPCSet(Ac_pk,Bc):
         invQts= np.linalg.inv(Q_k)
         invRts= np.linalg.inv(R_k)
         Y = cp.Variable((n, n),symmetric=True)
         Wi = cp.Variable((m, n)) # Solusi bobot untuk kontroler bds Ai 
 
-        outputKi=[]
-        outputP=[]
+        outputKi= np.zeros([8,2,3])
+        outputP= np.zeros([8,3,3])
+
         for i, element in enumerate(Ac_pk):
             # print(f"Indeks {i}: {element}")
             Ai = element
@@ -114,11 +117,13 @@ class Kinematic:
             if problem.status == cp.OPTIMAL:
                 P = np.linalg.inv(Y.value)
                 Ki = Wi.value@P
-                outputP.append(P)
-                outputKi.append(Ki)
+                outputP[i]=P
+                outputKi[i]=Ki
             else:
                 print("Problem not solved")
                 print("Status:", problem.status)
+        print("Output Ki : ", outputKi.shape)
+        print("Output P : ", outputP.shape)
         return outputKi,outputP
 
 class Dynamic:

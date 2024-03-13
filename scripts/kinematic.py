@@ -6,22 +6,13 @@ import matplotlib as plt
 import random
 # from geometry_msgs.msg import Twist
 from autonomous_vehicle.msg import state
-from constants import *
-from function import LPV, LMI
-# variabel state dari hasil pembacaan sensor / state sebelumnya
+from function import Kinematic
 
-
+Ac_pk, Bc = Kinematic.getModel()  # get model parameters
+Ki, P = Kinematic.getMPCSet(Ac_pk,Bc) 
 
 def callback(data):
-    Ac,Ac_pk,Bc = LPV.getKinematic(data)
-    P,Ki = LMI.getMPCSet(Ac_pk,Bc)
-    # print(np.linalg.eig(Ac)[0])
-    # print(Ac)
-    print(Bc)
-    # print(Ac_pk)
-    # print("P =  " , P)
-    # print("Ki=  " , Ki)
-    print("=================================")
+    Ac = Kinematic.getLPV(data, Ac_pk)  # get LPV model
 
 
 if __name__=='__main__':
