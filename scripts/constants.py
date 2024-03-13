@@ -3,10 +3,12 @@ import numpy as np
 
 n = 3  # number of states
 m = 2  # number of inputs
+
+
 Tc=0.1      # time sampling for kinematic control 
 Td=0.01     # time sampling for dynamic control 
 # car constants
-m = 5       # massa mobil
+mass = 5       # massa mobil
 lf = 0.1    # panjang antara CoM dg roda depan
 lr = 0.1    # panjang antara CoM dg roda belakang
 I = 20      # momen inersia
