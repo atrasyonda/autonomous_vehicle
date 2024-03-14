@@ -3,3 +3,6 @@ Struktur Node
 Publisher --> Kinematic --> LMI --> MPC
 Publisher --> Dynamic --> LMI --> LQR
 
+Coba simulasi open loop untuk LPV-LQR
+Pahami alur program MPC dari referensi 
+Pelajari lagi terminal set region dan LMI 

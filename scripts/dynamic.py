@@ -16,6 +16,9 @@ def callback(data):
     miu_vk, Ad = Dynamic.getLPV(data, Ad_vk)
     K_vk = Dynamic.evaluateLQR (miu_vk, Ki)
     Ad_cl = Ad - Bd@K_vk
+    
+    print("Ad_vk", Ad_vk)
+    print ("Ad", Ad)
     print("Ad closed loop", Ad_cl)
 
 if __name__=='__main__':

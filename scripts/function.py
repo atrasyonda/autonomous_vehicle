@@ -94,37 +94,88 @@ class Kinematic:
         invQts= np.linalg.inv(Q_k)
         invRts= np.linalg.inv(R_k)
         Y = cp.Variable((n, n),symmetric=True)
-        Wi = cp.Variable((m, n)) # Solusi bobot untuk kontroler bds Ai 
-
+        Wi = cp.Variable((m, n)) # Solusi bobot untuk kontroler bds Ai      
         outputKi= np.zeros([8,2,3])
-        outputP= np.zeros([8,3,3])
-
-        for i, element in enumerate(Ac_pk):
+        for i in range (2**n):
             # print(f"Indeks {i}: {element}")
-            Ai = element
-            Z = Ai@Y+Bc@Wi
-            lmi = cp.vstack([
-                cp.hstack([Y, Z.T ,Y, Wi.T]), #baris 1
-                cp.hstack([Z, Y, np.zeros([3,3]), np.zeros([3,2])]), #baris 2
-                cp.hstack([Y, np.zeros([3,3]), invQts, np.zeros([3,2])]), #baris 3
-                cp.hstack([Wi, np.zeros([2,3]), np.zeros([2,3]), invRts]) #baris 4
-                ])
-            constraints = [lmi>=(0.3*np.eye(11)), Y>>0] # lmi definit positif dgn batasan lebih spesifik agar nilai Y dan Wi tidak nol
-            obj = cp.Minimize(0)
-            problem = cp.Problem(obj, constraints)
-            problem.solve(solver=cp.SCS)
+            Ai = Ac_pk[i]
+            if i == 0 :
+                lmi = cp.vstack([
+                    cp.hstack([Y, (Ai@Y+Bc@Wi).T ,Y, Wi.T]), #baris 1
+                    cp.hstack([(Ai@Y+Bc@Wi), Y, np.zeros([3,3]), np.zeros([3,2])]), #baris 2
+                    cp.hstack([Y, np.zeros([3,3]), invQts, np.zeros([3,2])]), #baris 3
+                    cp.hstack([Wi, np.zeros([2,3]), np.zeros([2,3]), invRts]) #baris 4
+                    ])
+                constraints = [lmi>=(0.3*np.eye(11)), Y>>0] # lmi definit positif dgn batasan lebih spesifik agar nilai Y dan Wi tidak nol
+                obj = cp.Minimize(0)
+                problem = cp.Problem(obj, constraints)
+                problem.solve(solver=cp.SCS)
+                if problem.status == cp.OPTIMAL:
+                    y_opt = Y.value
+                    P = np.linalg.inv(y_opt)
+                    Ki = Wi.value@P
+                    outputKi[i]=Ki
+                else:
+                    print("Problem not solved")
+                    print("Status:", problem.status)
+            else :
+                lmi = cp.vstack([
+                    cp.hstack([y_opt, (Ai@y_opt+Bc@Wi).T ,y_opt, Wi.T]), #baris 1
+                    cp.hstack([(Ai@y_opt+Bc@Wi), y_opt, np.zeros([3,3]), np.zeros([3,2])]), #baris 2
+                    cp.hstack([y_opt, np.zeros([3,3]), invQts, np.zeros([3,2])]), #baris 3
+                    cp.hstack([Wi, np.zeros([2,3]), np.zeros([2,3]), invRts]) #baris 4
+                    ])
+                constraints = [lmi>=(0.3*np.eye(11))] # lmi definit positif dgn batasan lebih spesifik agar nilai Y dan Wi tidak nol
+                obj = cp.Minimize(0)
+                problem = cp.Problem(obj, constraints)
+                problem.solve(solver=cp.SCS)
+                if problem.status == cp.OPTIMAL:
+                    Ki = Wi.value@P
+                    outputKi[i]=Ki
+                else:
+                    print("Problem not solved")
+                    print("Status:", problem.status)
+                    outputKi[i]=0
+        print("Output P", P)
+        print("Output Ki", outputKi)
+        #================================================================================================
+        Z = cp.Variable((n, n), symmetric=True)
+        u_bar= np.array([[1.4], [20]]) # matrix 2x1
+        u_bar_squared= u_bar@u_bar.T
 
-            if problem.status == cp.OPTIMAL:
-                P = np.linalg.inv(Y.value)
-                Ki = Wi.value@P
-                outputP[i]=P
-                outputKi[i]=Ki
-            else:
-                print("Problem not solved")
-                print("Status:", problem.status)
-        print("Output Ki : ", outputKi.shape)
-        print("Output P : ", outputP.shape)
-        return outputKi,outputP
+        S= np.zeros([3,3])
+        lmi2=[]
+
+        for i in range (2**n):
+            Ai = Ac_pk[i]
+            Ki = outputKi[i]
+            lmi_prob = cp.vstack([
+                cp.hstack([-Z, Z@(Ai+Bc@Ki).T]), #baris 1
+                cp.hstack([(Ai+Bc@Ki)@Z, -Z]), #baris 2
+                ])
+            lmi2.append(lmi_prob)
+
+        # print ("lmi2 ke 1", lmi2[0])
+        constraints2 = [lmi2[0]<<0, 
+                        lmi2[1]<<0,
+                        lmi2[2]<<0,
+                        lmi2[3]<<0,
+                        lmi2[4]<<0,
+                        lmi2[5]<<0,
+                        lmi2[6]<<0,
+                        lmi2[7]<<0,
+                        Ki@Z@Ki.T-u_bar_squared<<0] 
+        obj2 = cp.Maximize(0)
+        problem2 = cp.Problem(obj2, constraints2)
+        problem2.solve(solver=cp.SCS)
+        if problem2.status == cp.OPTIMAL:
+            S=np.linalg.inv(Z.value)
+        else:
+            print("Problem not solved")
+            print("Status:", problem2.status)
+        print ("Output S:" , S)
+
+        return P, outputKi, S
 
 class Dynamic:
     def __init__(self) -> None:

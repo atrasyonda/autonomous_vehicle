@@ -1,51 +1,49 @@
 import numpy as np
-from scipy.optimize import minimize
 
-# Fungsi cost Jk
-def cost_function(u, x, Q, R, P, N):
-    cost = 0
-    for i in range(N):
-        cost += np.dot(np.dot(x[:, i].T, Q), x[:, i]) + np.dot(u[i].T, np.dot(R, u[i]))
-    cost += np.dot(np.dot(x[:, N].T, P), x[:, N])
-    return cost
+Ad_vk = np.array([[[ 4.38960000e-01, -2.47109379e+02, -2.47209379e+01],
+                   [ 0.00000000e+00, -3.70318593e+02,  9.48671407e+01],
+                   [ 0.00000000e+00,  2.37170352e+01,  3.37170352e+00]],
 
-# Batasan yang diberikan
-def constraints(u, x, A, B, N, x0, umin, umax):
-    X = np.zeros((len(x0), N+1))
-    X[:, 0] = x0
-    for i in range(N):
-        X[:, i+1] = np.dot(A, X[:, i]) + np.dot(B, u[i])
-    return np.concatenate((X[:, 1:] - x, u - umin, umax - u))
+                  [[ 4.38960000e-01, -2.47109379e+02, -2.47009379e+01],
+                   [ 0.00000000e+00, -3.70318593e+02,  9.48671407e+01],
+                   [ 0.00000000e+00,  2.37170352e+01,  3.37170352e+00]],
 
-# Inisialisasi parameter
-N = 10  # Horizon time
-n = 2   # State dimension
-m = 1   # Control input dimension
+                  [[-1.32104500e+01, -1.23554690e+00, -1.33554690e-01],
+                   [ 0.00000000e+00, -8.56592966e-01,  2.74340703e-01],
+                   [ 0.00000000e+00,  1.18585176e-01,  1.01185852e+00]],
 
-# Matriks cost
-Q = np.eye(n)
-R = np.eye(m)
-P = np.eye(n)
+                  [[-1.32104500e+01, -1.23554690e+00, -1.13554690e-01],
+                   [ 0.00000000e+00, -8.56592966e-01,  2.74340703e-01],
+                   [ 0.00000000e+00,  1.18585176e-01,  1.01185852e+00]],
 
-# Matriks sistem dinamis
-A = np.eye(n)
-B = np.eye(n)
+                  [[ 4.38960000e-01,  2.47109379e+02,  2.47009379e+01],
+                   [ 0.00000000e+00, -3.70318593e+02,  9.48671407e+01],
+                   [ 0.00000000e+00,  2.37170352e+01,  3.37170352e+00]],
 
-# Inisialisasi kondisi awal
-x0 = np.array([1, 2])
+                  [[ 4.38960000e-01,  2.47109379e+02,  2.47209379e+01],
+                   [ 0.00000000e+00, -3.70318593e+02,  9.48671407e+01],
+                   [ 0.00000000e+00,  2.37170352e+01,  3.37170352e+00]],
 
-# Inisialisasi batasan kontrol
-umin = -1
-umax = 1
+                  [[-1.32104500e+01,  1.23554690e+00,  1.13554690e-01],
+                   [ 0.00000000e+00, -8.56592966e-01,  2.74340703e-01],
+                   [ 0.00000000e+00,  1.18585176e-01,  1.01185852e+00]],
 
-# Persyaratan batasan
-cons = ({'type': 'ineq', 'fun': constraints, 'args': (A, B, N, x0, umin, umax)})
+                  [[-1.32104500e+01,  1.23554690e+00,  1.33554690e-01],
+                   [ 0.00000000e+00, -8.56592966e-01,  2.74340703e-01],
+                   [ 0.00000000e+00,  1.18585176e-01,  1.01185852e+00]]])
 
-# Pencarian optimum menggunakan metode SLSQP
-u_init = np.zeros((m, N))
-res = minimize(cost_function, u_init, args=(x0, Q, R, P, N), constraints=cons, method='SLSQP')
+Ad = np.array([[-10.864672,  34.7930006,   3.47280006],
+               [  0.,       -64.35207239, 16.53099276],
+               [  0.,         4.17419819,  1.41741982]])
 
-# Solusi kontrol yang dihasilkan
-u_opt = res.x
+Ad_closed_loop = np.array([[-1.54295312e+01,  2.39906520e+01, -3.22136938e+00],
+                           [ 3.25871953e-02, -1.47872558e+02, -8.66897998e+01],
+                           [ 8.14679884e-04,  2.08618605e+00, -1.16309999e+00]])
 
-print("Solusi optimal untuk kontrol:", u_opt)
+print("Ad_vk:")
+print(Ad_vk.shape)
+print("\nAd:")
+print(Ad.shape)
+print("\nAd closed loop:")
+print(Ad_closed_loop.shape)
+
