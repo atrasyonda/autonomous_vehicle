@@ -9,7 +9,7 @@ from autonomous_vehicle.msg import state
 from function import Kinematic
 
 Ac_pk, Bc = Kinematic.getModel()  # get model parameters
-Ki, P = Kinematic.getMPCSet(Ac_pk,Bc) 
+P, Ki, S= Kinematic.getMPCSet(Ac_pk,Bc) 
 
 def callback(data):
     Ac = Kinematic.getLPV(data, Ac_pk)  # get LPV model

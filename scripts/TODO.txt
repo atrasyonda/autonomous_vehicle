@@ -5,4 +5,10 @@ Publisher --> Dynamic --> LMI --> LQR
 
 Coba simulasi open loop untuk LPV-LQR
 Pahami alur program MPC dari referensi 
-Pelajari lagi terminal set region dan LMI 
+
+
+Pahami lagi yang dimaksud state_vehicle 
+(data yg diukur dari mobil) , vehicle input (data yg
+dikirim ke mobil) serta state system keseluruhan
+
+ada kaitannya dengan proses SLAM dan Odometri

@@ -136,8 +136,6 @@ class Kinematic:
                     print("Problem not solved")
                     print("Status:", problem.status)
                     outputKi[i]=0
-        print("Output P", P)
-        print("Output Ki", outputKi)
         #================================================================================================
         Z = cp.Variable((n, n), symmetric=True)
         u_bar= np.array([[1.4], [20]]) # matrix 2x1
@@ -173,8 +171,10 @@ class Kinematic:
         else:
             print("Problem not solved")
             print("Status:", problem2.status)
+            
+        print("Output P", P)
+        print("Output Ki", outputKi)
         print ("Output S:" , S)
-
         return P, outputKi, S
 
 class Dynamic:
