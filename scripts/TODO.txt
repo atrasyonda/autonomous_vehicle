@@ -11,4 +11,4 @@ Pahami lagi yang dimaksud state_vehicle
 (data yg diukur dari mobil) , vehicle input (data yg
 dikirim ke mobil) serta state system keseluruhan
 
-ada kaitannya dengan proses SLAM dan Odometri
+ada kaitannya dengan proses SLAM dan Odometrisss
