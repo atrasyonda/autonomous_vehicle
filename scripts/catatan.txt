@@ -1,47 +1,142 @@
-PERTANYAAN :
 
-1. APAKAH PROBLEM LMI ITU BISA DISELESAIKAN DENGAN CONVEX OPTIMIZATION ALGORITHM (CVXPY --> MENANGANI CONVEX OPTIMIZATION PROBLEM)
-2. BAGAIMANA MAKSUD PERSAMAAN 6 JIKA DIKAITKAN DENGAN PERSAMAAN 10 --> Jk(Z)
-3. KETIKA MENCOBA MENGANALISA KESTABILAN MATRIKS A HASIL LPV KINEMATIC, TERNYATA GA STABIL --> APAKAH ADA YG SALAH ATAU NORMAL KRN BELOM DIKONTROL ?
+============= STRUKTUR ROS CONTROL =======================
 
+/path_publisher (node)      --> /path(topic)    --> 
+                                                    /path_follower(node)   ---> /cmd_vel(topic) --> /cmd_vel_to_ackermann_drive(node) --> /ackermann_cmd(topic)
+/tf_odom_publisher (node)   --> /odom(topic)   --> 
 
-INFO DARI CHATGPT :
+/path param =  [pose(linear,angular)] --> #An array of poses that represents a Path for a robot to follow
+/odom param = [pose(linear,angular) ; twist/velocity(linear,angular)] --> # This represents an estimate of a position and velocity in free space. 
+/cmd_vel param = [twist(linear,angular)]
+/ackermann_cmd param = [delta, delta_dot, Vx, a, jerk]
 
-=========================
-PERTANYAAN
-=========================
-Jika saya mengubah constraintnya, sehingga jadi 
+==>> KINEMATIC CONTROL <<===
+state :
+- xe --> x_path - x_odom
+- ye --> y_path - y_odom
+- psi_e -- > psi_path - psi_odom (angular z)
 
-constraints = [lmi>=(0.2*np.eye(11)), Y>>0]
-obj = cp.Minimize(0)
-problem = cp.Problem(obj, constraints)
+input u :
+- Vx --> output kontrol masuk ke cmd_vel .linear.x -->  masuk ke ackermann_cmd.Vx
+- W_omega --> output kontrol masuk ke cmd_vel .angular.Z
 
-Output :
-Optimal value:  0.0
-Y = 
-[[3.14626608e-01 7.39329976e-02 6.59877512e-05]
- [7.39329976e-02 2.94961889e-01 2.28717695e-04]
- [6.59877512e-05 2.28717695e-04 3.15024893e-01]]
-Wi = 
-[[2.97562826e-02 4.37801785e-03 4.59587148e-06]
- [9.13832357e-06 3.16746553e-05 3.10370972e-02]]
+reference rc :  ---------> dari trajectory / path , tapi masih gaada implementasinya di sini
+- V_xr
+- W_omega_r
 
-artinya ada nilainya. Bagaimana penjelasannya ??
+==>> DYNAMIC CONTROL <<===
+state :
+- Vx --> velocity.x_odom
+- Vy --> velocity.y_odom
+- W --> velocity.theta_odom
 
-dan apakah dengan mengubah dari lmi>>0 menjadi lmi>=(0.2*np.eye(11)) tetap menunjukkan ketentuan bahwa lmi harus definit positif ?
+input u :
+- delta --> steering angle output kontrol masuk ke ackermann_cmd 
+- a --> acceleration output kontrol  masuk ke ackermann_cmd --> masih gatau buat apa
 
-=========================
-ChatGPT
-=========================
-Dengan mengubah batasan dari lmi >> 0 menjadi lmi >= (0.2*np.eye(11)), Anda memberikan batasan yang lebih spesifik pada matriks lmi. Dalam hal ini, Anda membatasi matriks lmi untuk menjadi positif semidefinite (atau lebih umumnya, lebih besar atau sama dengan 0.2 kali matriks identitas).
+===== /path (topic) message =================================
+header: 
+      seq: 422
+      stamp: 
+        secs: 901
+        nsecs: 970000000
+      frame_id: "world"
+    pose: 
+      position: 
+        x: 3.0
+        y: 1.0
+        z: 0.0
+      orientation: 
+        x: 0.0
+        y: 0.0
+        z: 0.0
+        w: 0.0
 
-Penjelasan output yang Anda dapatkan setelah mengubah batasan adalah sebagai berikut:
+===== /odom (topic) message ==================================
+header: 
+  seq: 935670
+  stamp: 
+    secs: 1428
+    nsecs: 115000000
+  frame_id: "world"
+child_frame_id: "ackermann_vehicle"
+pose: 
+  pose: 
+    position: 
+      x: 1.0682387210436026
+      y: 0.07966817360937888
+      z: 0.0
+    orientation: 
+      x: 0.9805959891764156
+      y: 0.19603955215991634
+      z: 1.2637389009854412e-07
+      w: -2.2530540914840125e-07
+  covariance: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+twist: 
+  twist: 
+    linear: 
+      x: -2.0336858170499557e-06
+      y: -4.47352672172645e-06
+      z: -3.7817224717675415e-06
+    angular: 
+      x: 0.0002192807777757453
+      y: -0.00010372537539292459
+      z: -6.269163257660059e-07
+  covariance: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
-Optimal value: 0.0: Seperti sebelumnya, nilai objektif yang optimal adalah 0, menunjukkan bahwa solver memenuhi semua batasan tanpa memperhatikan nilai objektif tertentu.
+===== /cmd_vel (topic) message ==================================
+linear: 
+  x: 0.6919304133920551
+  y: 0.0
+  z: 0.0
+angular: 
+  x: 0.0
+  y: 0.0
+  z: 0.020764563772051735
 
-Matriks Y dan Wi dengan nilai yang tidak nol: Kini, solver memberikan nilai yang tidak nol untuk matriks Y dan Wi. Ini menunjukkan bahwa solver berhasil menemukan matriks yang memenuhi batasan-batasan yang diberikan, dalam hal ini, lmi >= (0.2*np.eye(11)) dan Y >> 0.
+===== /ackermann_cmd (topic) message ==================================
+steering_angle: 1.3734008073806763
+steering_angle_velocity: 0.0
+speed: 0.10000000149011612
+acceleration: 0.0
+jerk: 0.0
 
-Tentang lmi >= (0.2*np.eye(11)): Ya, dengan mengganti lmi >> 0 menjadi lmi >= (0.2*np.eye(11)), Anda tetap mengesahkan bahwa matriks lmi harus positif semidefinite, tetapi dengan batasan tambahan bahwa setiap elemen di lmi harus lebih besar atau sama dengan 0.2 dikalikan dengan matriks identitas.
+===== Node [/path_follower_16385_1710606477744] INFO ==================================
+Publications: 
+ * /cmd_vel [geometry_msgs/Twist]
+ * /rosout [rosgraph_msgs/Log]
 
-Secara keseluruhan, perubahan batasan memberikan solver kebebasan untuk menemukan matriks lmi, Y, dan Wi yang memenuhi kriteria yang lebih spesifik, dan hasilnya adalah matriks dengan nilai yang sesuai.
+Subscriptions: 
+ * /clock [rosgraph_msgs/Clock]
+ * /odom [nav_msgs/Odometry]
+ * /path [nav_msgs/Path]
+
+Services: 
+ * /path_follower_16385_1710606477744/get_loggers
+ * /path_follower_16385_1710606477744/set_logger_level
+
+contacting node http://system:41481/ ...
+Pid: 16385
+Connections:
+ * topic: /rosout
+    * to: /rosout
+    * direction: outbound (36927 - 127.0.0.1:50272) [17]
+    * transport: TCPROS
+ * topic: /cmd_vel
+    * to: /cmd_vel_to_ackermann_drive
+    * direction: outbound (36927 - 127.0.0.1:50260) [10]
+    * transport: TCPROS
+ * topic: /clock
+    * to: /gazebo (http://system:42237/)
+    * direction: inbound
+    * transport: TCPROS
+ * topic: /path
+    * to: /path_publisher_15184_1710606335490 (http://system:44851/)
+    * direction: inbound
+    * transport: TCPROS
+ * topic: /odom
+    * to: /tf_odom_publisher (http://system:44979/)
+    * direction: inbound
+    * transport: TCPROS
+
 
