@@ -29,8 +29,8 @@ xr_dot_max= 20      # batas atas reference kecepatan linier (m/s)
 psi_min= -0.05      # batas bawah sudut orientasi (rad)
 psi_max= 0.05       # batas atas sudut orientasi (rad)
 
-delta_min = -15  # batas bawah sudut steering (deg) --> referensi -0.25 rad
-delta_max = 15   # batas atas sudut steering (deg) --> referensi 0.25 rad
+delta_min = -0.25 # batas bawah sudut steering (rad) --> referensi -15 deg
+delta_max = 0.25   # batas atas sudut steering (deg) --> referensi 15 deg
 x_dot_min = 0.1     # batas bawah kecepatan longitudinal / linier (m/s)
 x_dot_max = 20      # batas atas kecepatan longitudinal / linier (m/s)
 y_dot_min = -1      # batas bawah kecepatan lateral (m/s)

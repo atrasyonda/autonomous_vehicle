@@ -14,7 +14,7 @@ Kinematic.MPC(Ac_pk[0], Bc, P, Ki, S)  # get MPC model
 
 
 def callback(data):
-    x_k = np.array([[data.x], [data.y], [data.psi]])
+    x_k = np.array([[data.x_e], [data.y_e], [data.psi_e]])
     print("state : ", x_k)
     Ac = Kinematic.getLPV(data, Ac_pk)  # get LPV model
 
