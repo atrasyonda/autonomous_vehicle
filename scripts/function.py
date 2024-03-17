@@ -54,12 +54,12 @@ class Kinematic:
             [-psi_dot_max*Tc, 1, xr_dot_max*np.sin(psi_max)*Tc/psi_max],
             [0, 0, 1]
         ])
-        Ac_pk = np.array([A0, A1, A2, A3, A4, A5, A6, A7])
+        Ac_pk = np.array([A0, A1, A2, A3, A4, A5, A6, A7]) # matrix 8x3x3
         Bc= np.array([
             [-Tc,0],
             [0,0],
             [0,-Tc]
-        ])
+        ]) # matrix 3x2
         return Ac_pk, Bc
 
 
@@ -172,10 +172,31 @@ class Kinematic:
             print("Problem not solved")
             print("Status:", problem2.status)
             
-        print("Output P", P)
-        print("Output Ki", outputKi)
-        print ("Output S:" , S)
+        # print("Output P", P)
+        # print("Output Ki", outputKi)
+        # print ("Output S:" , S)
         return P, outputKi, S
+    def MPC(Ac, Bc, P, Ki, S):
+        """=====================================================
+        A_aug = [A , B] --> dimension (5x5)
+                [O , I]
+        state ---> [x_k+1] = [x k]   --> dimension (5x1)
+                    [u_k]    [u_k-1]
+        B_aug = [B] --> dimension (5x2)
+                [I]
+        input ---> [delta_u_k] --> dimension (2x1)
+        ========================================================
+        """
+        A_aug=np.concatenate((Ac,Bc),axis=1)
+        temp1=np.zeros((np.size(Bc,1),np.size(Ac,1)))
+        temp2=np.identity(np.size(Bc,1))
+        temp=np.concatenate((temp1,temp2),axis=1)
+        A_aug=np.concatenate((A_aug,temp),axis=0)
+        # print("Ac", Ac)
+        # print("Bc", Bc)
+        # print("A_aug: ", A_aug)
+        B_aug=np.concatenate((Bc,np.identity(np.size(Bc,1))),axis=0)
+        # print("B_aug: ", B_aug.shape)
 
 class Dynamic:
     def __init__(self) -> None:

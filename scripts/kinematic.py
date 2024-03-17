@@ -10,8 +10,12 @@ from function import Kinematic
 
 Ac_pk, Bc = Kinematic.getModel()  # get model parameters
 P, Ki, S= Kinematic.getMPCSet(Ac_pk,Bc) 
+Kinematic.MPC(Ac_pk[0], Bc, P, Ki, S)  # get MPC model
+
 
 def callback(data):
+    x_k = np.array([[data.x], [data.y], [data.psi]])
+    print("state : ", x_k)
     Ac = Kinematic.getLPV(data, Ac_pk)  # get LPV model
 
 

@@ -15,6 +15,7 @@ if __name__=='__main__':
     rate = rospy.Rate(1)
     while not rospy.is_shutdown():
         car = state()
+        
         car.xr_dot = round(random.uniform(xr_dot_min, xr_dot_max),2)
         car.psi_dot = round(random.uniform(psi_dot_min, psi_dot_max),2)
         car.psi = round(random.uniform(psi_min, psi_max),2)
