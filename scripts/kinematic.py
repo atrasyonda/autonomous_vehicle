@@ -17,7 +17,7 @@ def callback(data):
     x_k = np.array([[data.x_e], [data.y_e], [data.psi_e]])
     u_k = np.array([[data.delta], [a]])
     rc_k = np.array([[data.x_dot_ref*data.psi_e], [data.psi_dot_ref]])
-    print("state : ", x_k.shape)
+    # print("state : ", x_k.shape)
     Ac = Kinematic.getLPV(data, Ac_pk)  # get LPV model
     Kinematic.MPC(x_k, u_k, rc_k, Ac, Bc, P, Ki, S)
 

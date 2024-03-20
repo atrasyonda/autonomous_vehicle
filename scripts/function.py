@@ -174,7 +174,15 @@ class Kinematic:
             
         # print("Output P", P)
         # print("Output Ki", outputKi)
+        S = np.array([
+            [0.465, 0, 0],
+            [0, 23.813, 76.596],
+            [0, 76.596, 257.251]
+        ])  # INI MATRIX S DARI JURNAL REFERENSI
         # print ("Output S:" , S)
+        print ("S eigenvalues", np.linalg.eigvals(S)) # check if S is positive definite
+
+
         return P, outputKi, S
     def MPC(x_k, u_k, rc_k, Ac, Bc, P, Ki, S): # 
         """=====================================================
@@ -198,10 +206,61 @@ class Kinematic:
         # print("B_aug: ", B_aug.shape)
         ========================================================
         """
+        # ====== DARI CHAT GPT ======== 
+        X_k = [cp.Variable((n, 1)) for _ in range(N+1)]
+        delta_u = [cp.Variable((m, 1)) for _ in range(N)]
+        U_k = [cp.Variable((m, 1)) for _ in range(N+1)]
+        U_k[0].value = u_k  # Set nilai awal
 
+        Jk = 0
+
+        for i in range(N):
+            print("iterasi ke-",i)
+            if i < N:
+                Jk = sum([cp.quad_form(X_k[i], Q_k) + cp.quad_form(delta_u[i], R_k)])
+            else:
+                Jk += cp.quad_form(X_k[N], P)
+
+            objective = cp.Minimize(Jk)
+            constraints = [X_k[i+1]==Ac@X_k[i]+Bc@u_k-Bc@rc_k, 
+                        U_k[i+1]==U_k[i]+delta_u[i],
+                        U_k[i]>=u_min, U_k[i]<=u_max,
+                        delta_u[i]>=delta_u_min, delta_u[i]<=delta_u_max,
+                        cp.quad_form(X_k[N], S)<=1
+                        #    X_k[N].T@S@X_k[N]<=1
+                        ]
+            problem = cp.Problem(objective, constraints)
+            problem.solve(solver=cp.GUROBI, verbose=False)
+            if problem.status == cp.OPTIMAL:
+                print("Jk_optimized ke-",i," = ", problem.value)
+                print("X_k optimized = ", X_k[i].value)
+                print("U_k optimized = ", U_k[i].value)
+            else:
+                print("Problem not solved")
+                print("Status:", problem.status)
+
+        # Buat objective function dan constraint
+        
+
+        # Buat masalah optimisasi dan selesaikan
+
+        # for i in range(N+1):
+        #     print(f"X_k[{i}]:")
+        #     print(f"Nilai:\n{X_k[i].value}")
+        #     print(f"Dimensi: {X_k[i].shape}")
+        
+
+        # x_k_opt = np.zeros([N,3,1])
+        # u_k_opt = np.zeros([N,2,1])
+        # for i in range(N):
+        #     u_k_opt[i] = U_k[i].value 
+        #     x_k_opt[i] = X_k[i].value
+        # print ("Optimal x_k: ", x_k_opt)
+        # print ("Optimal u_k: ", u_k_opt)
+        """
         #===== CALCULATE ESTIMATE STATE DURING HORIZON PERIOD ======
         X_k = np.zeros([N,3,1])
-        delta_u = np.zeros([N,2,1])
+        U_k = np.zeros([N,2,1])
 
         for i in range (N):
             if i == 0 :
@@ -210,11 +269,23 @@ class Kinematic:
                 X_k[i]= Ac@X_k[i-1]+Bc@u_k-Bc@rc_k
         print ("X_k : ", X_k.shape)
         #===========================================================
+        delta_u = [cp.Variable((m, 1)) for _ in range(N)] # delta_u = matrix(N,2,1)
         Jk = 0
         for i in range(N):
             Jk += X_k[i].T@(Q_k@X_k[i]) + delta_u[i].T@(R_k @ delta_u[i])
         Jk += X_k[i].T@(P@X_k[i])
-        # return cost
+        print ("Jk : ", Jk)
+        print ("Jk shape: ", Jk.shape)
+
+        objective = cp.Minimize(Jk)
+        constraints = []
+
+        # Buat masalah optimisasi dan selesaikan
+        problem = cp.Problem(objective, constraints)
+        problem.solve(solver=cp.GUROBI, verbose=True)
+        print("Optimal cost:", problem.value)
+        """
+
 
 class Dynamic:
     def __init__(self) -> None:
