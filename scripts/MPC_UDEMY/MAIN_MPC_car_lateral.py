@@ -120,7 +120,9 @@ for i in range(0,sim_length-1):
         Hdb,Fdbt,Cdb,Adc=support.mpc_simplification(Ad,Bd,Cd,Dd,hz)
 
     ft=np.matmul(np.concatenate((np.transpose(x_aug_t)[0][0:len(x_aug_t)],r),axis=0),Fdbt)
+    print ("ft dimension : ", ft.shape)
     du=-np.matmul(np.linalg.inv(Hdb),np.transpose([ft]))
+    print ("du dimension : ", du.shape)
     x_aug_opt=np.matmul(Cdb,du)+np.matmul(Adc,x_aug_t)
     psi_opt=np.matmul(C_psi_opt[0:hz,0:(len(states)+np.size(U1))*hz],x_aug_opt)
     Y_opt=np.matmul(C_Y_opt[0:hz,0:(len(states)+np.size(U1))*hz],x_aug_opt)

@@ -3,7 +3,7 @@ import numpy as np
 
 n = 3  # number of states
 m = 2  # number of inputs
-
+N = 20 # horizon period
 
 Tc=0.1      # time sampling for kinematic control 
 Td=0.01     # time sampling for dynamic control 

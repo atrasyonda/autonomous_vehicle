@@ -10,13 +10,17 @@ from function import Kinematic
 
 Ac_pk, Bc = Kinematic.getModel()  # get model parameters
 P, Ki, S= Kinematic.getMPCSet(Ac_pk,Bc) 
-Kinematic.MPC(Ac_pk[0], Bc, P, Ki, S)  # get MPC model
-
+# set initial variabel
+a = 0
 
 def callback(data):
     x_k = np.array([[data.x_e], [data.y_e], [data.psi_e]])
-    print("state : ", x_k)
+    u_k = np.array([[data.delta], [a]])
+    rc_k = np.array([[data.x_dot_ref*data.psi_e], [data.psi_dot_ref]])
+    print("state : ", x_k.shape)
     Ac = Kinematic.getLPV(data, Ac_pk)  # get LPV model
+    Kinematic.MPC(x_k, u_k, rc_k, Ac, Bc, P, Ki, S)
+
 
 
 if __name__=='__main__':

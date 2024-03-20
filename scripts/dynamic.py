@@ -13,6 +13,7 @@ Ad_vk, Bd = Dynamic.getModel()
 Ki = Dynamic.getLQR(Ad_vk, Bd)
 
 def callback(data):
+    x_d = np.array([[data.x_dot], [data.y_dot],[data.psi_dot]]) 
     miu_vk, Ad = Dynamic.getLPV(data, Ad_vk)
     K_vk = Dynamic.evaluateLQR (miu_vk, Ki)
     Ad_cl = Ad - Bd@K_vk

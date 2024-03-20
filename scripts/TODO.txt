@@ -13,3 +13,9 @@ dikirim ke mobil) serta state system keseluruhan
 
 tinggal pahami state system kontrol secara keseluruhan 
 --> mana state yg jadi output, mana yg jadi feedback untuk iterasi selanjutnya sehingga tau augmented_state_vectornya gimana
+
+sudah buat augmented_state_vector , sudah perbaiki state msg dan Publisher
+
+TODO : 
+Membenarkan variabel yg rancu pd function Kinematic dan Dynamic terkait state, 
+rc, input dan schedulling variable

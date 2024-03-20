@@ -64,9 +64,9 @@ class Kinematic:
 
 
     def getLPV(car:state, Ac_pk):
-        xr_dot = car.xr_dot
         psi_dot= car.psi_dot
-        psi=car.psi
+        xr_dot = car.x_dot_ref
+        psi=car.psi_e
 
         nu0_psidot= (psi_dot_max-psi_dot)/(psi_dot_max-psi_dot_min)
         nu1_psidot= 1-nu0_psidot
@@ -176,7 +176,7 @@ class Kinematic:
         # print("Output Ki", outputKi)
         # print ("Output S:" , S)
         return P, outputKi, S
-    def MPC(Ac, Bc, P, Ki, S):
+    def MPC(x_k, u_k, rc_k, Ac, Bc, P, Ki, S): # 
         """=====================================================
         A_aug = [A , B] --> dimension (5x5)
                 [O , I]
@@ -185,8 +185,7 @@ class Kinematic:
         B_aug = [B] --> dimension (5x2)
                 [I]
         input ---> [delta_u_k] --> dimension (2x1)
-        ========================================================
-        """
+
         A_aug=np.concatenate((Ac,Bc),axis=1)
         temp1=np.zeros((np.size(Bc,1),np.size(Ac,1)))
         temp2=np.identity(np.size(Bc,1))
@@ -197,6 +196,25 @@ class Kinematic:
         # print("A_aug: ", A_aug)
         B_aug=np.concatenate((Bc,np.identity(np.size(Bc,1))),axis=0)
         # print("B_aug: ", B_aug.shape)
+        ========================================================
+        """
+
+        #===== CALCULATE ESTIMATE STATE DURING HORIZON PERIOD ======
+        X_k = np.zeros([N,3,1])
+        delta_u = np.zeros([N,2,1])
+
+        for i in range (N):
+            if i == 0 :
+                X_k[i]= x_k
+            else :
+                X_k[i]= Ac@X_k[i-1]+Bc@u_k-Bc@rc_k
+        print ("X_k : ", X_k.shape)
+        #===========================================================
+        Jk = 0
+        for i in range(N):
+            Jk += X_k[i].T@(Q_k@X_k[i]) + delta_u[i].T@(R_k @ delta_u[i])
+        Jk += X_k[i].T@(P@X_k[i])
+        # return cost
 
 class Dynamic:
     def __init__(self) -> None:
@@ -254,9 +272,9 @@ class Dynamic:
         return Ad_vk, Bd
     
     def getLPV(car:state, Ad_vk):
+        delta = car.delta #sudut steering
         x_dot = car.x_dot
         y_dot = car.y_dot
-        delta = car.delta #sudut steering
     
         nu0_delta= (delta_max-delta)/(delta_max-delta_min)
         nu1_delta= 1-nu0_delta
