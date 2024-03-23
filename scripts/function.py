@@ -184,7 +184,7 @@ class Kinematic:
 
 
         return P, outputKi, S
-    def MPC(x_k, u_k, rc_k, Ac, Bc, P, Ki, S): # 
+    def MPC(x_k, u_k, r_k, Ac, Bc, P, Ki, S): # 
         """=====================================================
         A_aug = [A , B] --> dimension (5x5)
                 [O , I]
@@ -208,83 +208,127 @@ class Kinematic:
         """
         # ====== DARI CHAT GPT ======== 
         X_k = [cp.Variable((n, 1)) for _ in range(N+1)]
-        delta_u = [cp.Variable((m, 1)) for _ in range(N)]
-        U_k = [cp.Variable((m, 1)) for _ in range(N+1)]
-        U_k[0].value = u_k  # Set nilai awal
-
+        delta_u_k = [cp.Variable((m, 1)) for _ in range(N)]     # Control input at time k
+        U_k = [cp.Variable((m, 1)) for _ in range(N)]     # Control input at time k        
         Jk = 0
-
-        for i in range(N):
-            print("iterasi ke-",i)
-            if i < N:
-                Jk = sum([cp.quad_form(X_k[i], Q_k) + cp.quad_form(delta_u[i], R_k)])
-            else:
-                Jk += cp.quad_form(X_k[N], P)
-
-            objective = cp.Minimize(Jk)
-            constraints = [X_k[i+1]==Ac@X_k[i]+Bc@u_k-Bc@rc_k, 
-                        U_k[i+1]==U_k[i]+delta_u[i],
-                        U_k[i]>=u_min, U_k[i]<=u_max,
-                        delta_u[i]>=delta_u_min, delta_u[i]<=delta_u_max,
-                        cp.quad_form(X_k[N], S)<=1
-                        #    X_k[N].T@S@X_k[N]<=1
-                        ]
-            problem = cp.Problem(objective, constraints)
-            problem.solve(solver=cp.GUROBI, verbose=False)
-            if problem.status == cp.OPTIMAL:
-                print("Jk_optimized ke-",i," = ", problem.value)
-                print("X_k optimized = ", X_k[i].value)
-                print("U_k optimized = ", U_k[i].value)
-            else:
-                print("Problem not solved")
-                print("Status:", problem.status)
-
-        # Buat objective function dan constraint
-        
-
-        # Buat masalah optimisasi dan selesaikan
-
-        # for i in range(N+1):
-        #     print(f"X_k[{i}]:")
-        #     print(f"Nilai:\n{X_k[i].value}")
-        #     print(f"Dimensi: {X_k[i].shape}")
-        
-
-        # x_k_opt = np.zeros([N,3,1])
-        # u_k_opt = np.zeros([N,2,1])
-        # for i in range(N):
-        #     u_k_opt[i] = U_k[i].value 
-        #     x_k_opt[i] = X_k[i].value
-        # print ("Optimal x_k: ", x_k_opt)
-        # print ("Optimal u_k: ", u_k_opt)
-        """
-        #===== CALCULATE ESTIMATE STATE DURING HORIZON PERIOD ======
-        X_k = np.zeros([N,3,1])
-        U_k = np.zeros([N,2,1])
-
         for i in range (N):
+            # print("iterasi ke-",i)
+            Jk += cp.quad_form(X_k[i], Q_k) + cp.quad_form(delta_u_k[i], R_k)
             if i == 0 :
-                X_k[i]= x_k
-            else :
-                X_k[i]= Ac@X_k[i-1]+Bc@u_k-Bc@rc_k
-        print ("X_k : ", X_k.shape)
-        #===========================================================
-        delta_u = [cp.Variable((m, 1)) for _ in range(N)] # delta_u = matrix(N,2,1)
-        Jk = 0
-        for i in range(N):
-            Jk += X_k[i].T@(Q_k@X_k[i]) + delta_u[i].T@(R_k @ delta_u[i])
-        Jk += X_k[i].T@(P@X_k[i])
-        print ("Jk : ", Jk)
-        print ("Jk shape: ", Jk.shape)
-
+                constraints = [X_k[i]==x_k]      # Set initial state
+                U_k[i-1].value = u_k
+            constraints += [U_k[i] == U_k[i-1]+delta_u_k[i]]
+            constraints +=  [X_k[i+1] == Ac @ X_k[i] + Bc @ delta_u_k[i] - Bc @ r_k]
+            constraints += [delta_u_min <= delta_u_k[i], delta_u_k[i] <= delta_u_max]
+            constraints += [u_min <= U_k[i], U_k[i] <= u_max]
+        Jk += cp.quad_form(X_k[N], P)
+        constraints += [cp.quad_form(X_k[N], S)<=1]
+        # Define and solve the optimization problem
         objective = cp.Minimize(Jk)
-        constraints = []
-
-        # Buat masalah optimisasi dan selesaikan
         problem = cp.Problem(objective, constraints)
         problem.solve(solver=cp.GUROBI, verbose=True)
-        print("Optimal cost:", problem.value)
+        if problem.status == cp.OPTIMAL:
+            print("Jk_optimized = ", problem.value)
+            print ("State Optimized")
+            for  j in range(len(X_k)):
+                print(X_k[j].value)
+            print ("Input")
+            for  j in range(len(X_k)):
+                print(X_k[j].value)
+        else:
+            print("Problem not solved")
+            print("Status:", problem.status)
+
+
+        
+    def MPC2(x_k, u_k, r_k, Ac, Bc, P, Ki, S): 
+        #===== CALCULATE ESTIMATE STATE DURING HORIZON PERIOD ======
+        X_k = cp.Variable((n,N+1))   # State at time k
+        delta_u_k = cp.Variable((m,N))     # Control input at time k
+        U_k = cp.Parameter((m,N))
+        
+        Jk = 0
+        for i in range (N):
+            print("iterasi ke-",i)
+            Jk += cp.quad_form(X_k[:,i], Q_k) + cp.quad_form(delta_u_k[:,i], R_k)
+            if i == 0 :
+                constraints = [X_k[:,i]==x_k]      # Set initial state
+                constraints += [U_k[:,i-1] == u_k] # Set previous input
+            constraints += [u_k[:,i] == u_k[:,i-1]+delta_u_k[:,i]]
+            constraints +=  [X_k[:,i+1] == Ac @ X_k[:,i] + Bc @ delta_u_k[:,i] - Bc @ r_k]
+            constraints += [delta_u_min <= delta_u_k[:,i], delta_u_k[:,i] <= delta_u_max]
+            constraints += [u_min <= u_k[:,i], u_k[:,i] <= u_max]
+        Jk += cp.quad_form(X_k[:,N], P)
+        constraints += [cp.quad_form(X_k[N], S)<=1]
+        # Define and solve the optimization problem
+        objective = cp.Minimize(Jk)
+        problem = cp.Problem(objective, constraints)
+        problem.solve(solver=cp.GUROBI, verbose=False)
+        if problem.status == cp.OPTIMAL:
+            print("Jk_optimized ke-",i," = ", problem.value)
+            print("X_k", X_k.value)
+            print("Delta_u", delta_u_k.value)
+        else:
+            print("Problem not solved")
+            print("Status:", problem.status)
+
+
+            # if i == 0 :
+            #     X_k[i]= x_k
+            #     U_k[i]= u_k
+            # else :
+            #     U_k[i]= U_k[i-1]+delta_u_opt[i-1]
+            #     X_k[i]= Ac@X_k[i-1]+Bc@U_k[i]-Bc@rc_k
+            
+            # Jk = sum([cp.quad_form(X_k[i], Q_k) + cp.quad_form(delta_u[i], R_k)])
+            # objective = cp.Minimize(Jk)
+            # constraints = [
+            #     delta_u[i]>=delta_u_min, delta_u[i]<=delta_u_max
+            # ]
+            # problem = cp.Problem(objective, constraints)
+            # problem.solve(solver=cp.GUROBI, verbose=False)
+            # if problem.status == cp.OPTIMAL:
+            #     print("Jk_optimized= ", problem.value)
+            #     print("delta_u_optimized = ", delta_u[i].value)
+            #     delta_u_opt[i] = delta_u[i].value
+            # else:
+            #     print("Problem not solved")
+            #     print("Status:", problem.status)
+        #===========================================================
+
+        #===========================================================
+    def MPC3(x_k, u_k, rc_k, Ac, Bc, P, Ki, S): # 
+        """=====================================================
+        A_aug = [A , B] --> dimension (5x5)
+                [O , I]
+        state ---> [x_k+1] = [x k]   --> dimension (5x1)
+                    [u_k]    [u_k-1]
+        B1_aug = [B] --> dimension (5x2)
+                [I]
+        input ---> [delta_u_k] --> dimension (2x1)
+        B2_aug = [B] --> dimension (5x2)
+                 [O]   
+        reference rc ---> [vd cos psi , omega_d] --> dimension (2x1)              
+        ========================================================
         """
+        A_aug=np.concatenate((Ac,Bc),axis=1)
+        temp1=np.zeros((np.size(Bc,1),np.size(Ac,1)))
+        temp2=np.identity(np.size(Bc,1))
+        temp=np.concatenate((temp1,temp2),axis=1)
+        A_aug=np.concatenate((A_aug,temp),axis=0)
+        # print("Ac", Ac)
+        # print("Bc", Bc)
+        # print("A_aug: ", A_aug)
+        B_aug=np.concatenate((Bc,np.identity(np.size(Bc,1))),axis=0)
+        # print("B_aug: ", B_aug.shape)
+        G = np.zeros([1,2])
+        H = np.zeros([2,1])
+        I = G@H
+        print("===================")
+        print(G)
+        print(H)
+        print("===================")
+        print(I)
 
 
 class Dynamic:
