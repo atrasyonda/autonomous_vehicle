@@ -39,8 +39,16 @@ y_dot_max = 1       # batas atas kecepatan lateral (m/s)
 # Kinematic LPV-MPC Controller Design
 u_max = np.array([[x_dot_max], [psi_dot_max]])  # batas atas input (X_dot dan Psi_dot) --> jurnal 
 u_min = np.array([[x_dot_min], [psi_dot_min]])  # batas bawah input (X_dot dan Psi_dot)--> jurnal
+
+# u_max = [x_dot_max, psi_dot_max]  
+# u_min = [x_dot_min, psi_dot_min]
+
 delta_u_max = np.array([[2], [0.3]])  # batas atas perubahan input --> jurnal
 delta_u_min = np.array([[-2], [-0.3]])  # batas bawah perubahan input --> jurnal
+
+# delta_u_max = [2, 0.3]
+# delta_u_min = [-2, -0.3]
+
 Q_k = np.diag([1,1,3])  # kinematic control state weight matrix --> JURNAL
 R_k = np.diag([1,3])  # kinematic control input weight matrix --> JURNAL
 

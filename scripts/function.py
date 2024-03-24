@@ -206,7 +206,7 @@ class Kinematic:
         # print("B_aug: ", B_aug.shape)
         ========================================================
         """
-        # ====== DARI CHAT GPT ======== 
+        
         X_k = [cp.Variable((n, 1)) for _ in range(N+1)]
         delta_u_k = [cp.Variable((m, 1)) for _ in range(N)]     # Control input at time k
         U_k = [cp.Variable((m, 1)) for _ in range(N)]     # Control input at time k        
@@ -245,21 +245,30 @@ class Kinematic:
         #===== CALCULATE ESTIMATE STATE DURING HORIZON PERIOD ======
         X_k = cp.Variable((n,N+1))   # State at time k
         delta_u_k = cp.Variable((m,N))     # Control input at time k
-        U_k = cp.Parameter((m,N))
+        U_k = cp.Variable((m,N))
         
+        X_0 = [x_k[0,0], x_k[1,0], x_k[2,0]]
+        U_0 = [u_k[0,0], u_k[1,0]]
+        # print(X_0)
+        # print(U_0)
+        r_k = np.squeeze(r_k)
+
         Jk = 0
         for i in range (N):
             print("iterasi ke-",i)
-            Jk += cp.quad_form(X_k[:,i], Q_k) + cp.quad_form(delta_u_k[:,i], R_k)
             if i == 0 :
-                constraints = [X_k[:,i]==x_k]      # Set initial state
-                constraints += [U_k[:,i-1] == u_k] # Set previous input
-            constraints += [u_k[:,i] == u_k[:,i-1]+delta_u_k[:,i]]
+                constraints = [X_k[:,i]==X_0]      # Set initial state
+                constraints += [U_k[:,i-1] == U_0] # Set previous input
+
+            Jk += cp.quad_form(X_k[:,i], Q_k) + cp.quad_form(delta_u_k[:,i], R_k)
+            constraints += [U_k[:,i] == U_k[:,i-1]+delta_u_k[:,i]]
             constraints +=  [X_k[:,i+1] == Ac @ X_k[:,i] + Bc @ delta_u_k[:,i] - Bc @ r_k]
+            # constraints +=  [X_k[:,i+1] == np.matmul(Ac, X_k[:,i]) + np.matmul(Bc, delta_u_k[:,i]) - np.matmul(Bc,r_k)]
             constraints += [delta_u_min <= delta_u_k[:,i], delta_u_k[:,i] <= delta_u_max]
-            constraints += [u_min <= u_k[:,i], u_k[:,i] <= u_max]
+            constraints += [u_min <= U_k[:,i], U_k[:,i] <= u_max]
+            
         Jk += cp.quad_form(X_k[:,N], P)
-        constraints += [cp.quad_form(X_k[N], S)<=1]
+        constraints += [cp.quad_form(X_k[:,N], S)<=1]
         # Define and solve the optimization problem
         objective = cp.Minimize(Jk)
         problem = cp.Problem(objective, constraints)
