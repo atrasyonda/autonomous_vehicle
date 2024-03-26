@@ -1,92 +1,54 @@
-from cvxpy import *
+import cvxpy as cp
 import numpy as np
-import scipy as sp
-from scipy import sparse
 
-# Discrete time model of a quadcopter
-Ad = sparse.csc_matrix([
-  [1.,      0.,     0., 0., 0., 0., 0.1,     0.,     0.,  0.,     0.,     0.    ],
-  [0.,      1.,     0., 0., 0., 0., 0.,      0.1,    0.,  0.,     0.,     0.    ],
-  [0.,      0.,     1., 0., 0., 0., 0.,      0.,     0.1, 0.,     0.,     0.    ],
-  [0.0488,  0.,     0., 1., 0., 0., 0.0016,  0.,     0.,  0.0992, 0.,     0.    ],
-  [0.,     -0.0488, 0., 0., 1., 0., 0.,     -0.0016, 0.,  0.,     0.0992, 0.    ],
-  [0.,      0.,     0., 0., 0., 1., 0.,      0.,     0.,  0.,     0.,     0.0992],
-  [0.,      0.,     0., 0., 0., 0., 1.,      0.,     0.,  0.,     0.,     0.    ],
-  [0.,      0.,     0., 0., 0., 0., 0.,      1.,     0.,  0.,     0.,     0.    ],
-  [0.,      0.,     0., 0., 0., 0., 0.,      0.,     1.,  0.,     0.,     0.    ],
-  [0.9734,  0.,     0., 0., 0., 0., 0.0488,  0.,     0.,  0.9846, 0.,     0.    ],
-  [0.,     -0.9734, 0., 0., 0., 0., 0.,     -0.0488, 0.,  0.,     0.9846, 0.    ],
-  [0.,      0.,     0., 0., 0., 0., 0.,      0.,     0.,  0.,     0.,     0.9846]
-])
-# print("Ad : ", Ad)
-Bd = sparse.csc_matrix([
-  [0.,      -0.0726,  0.,     0.0726],
-  [-0.0726,  0.,      0.0726, 0.    ],
-  [-0.0152,  0.0152, -0.0152, 0.0152],
-  [-0.,     -0.0006, -0.,     0.0006],
-  [0.0006,   0.,     -0.0006, 0.0000],
-  [0.0106,   0.0106,  0.0106, 0.0106],
-  [0,       -1.4512,  0.,     1.4512],
-  [-1.4512,  0.,      1.4512, 0.    ],
-  [-0.3049,  0.3049, -0.3049, 0.3049],
-  [-0.,     -0.0236,  0.,     0.0236],
-  [0.0236,   0.,     -0.0236, 0.    ],
-  [0.2107,   0.2107,  0.2107, 0.2107]])
-# print("Bd : ", Bd)
-[nx, nu] = Bd.shape
-# print("nx", nx)
-# print("nu", nu)
+# Definisikan matriks A, B
+A = np.array([[1, 0.1], [0, 1]])
+B = np.array([[0], [0.1]])
 
-# Constraints
-u0 = 10.5916
-umin = np.array([9.6, 9.6, 9.6, 9.6]) - u0
-umax = np.array([13., 13., 13., 13.]) - u0
-xmin = np.array([-np.pi/6,-np.pi/6,-np.inf,-np.inf,-np.inf,-1.,
-                 -np.inf,-np.inf,-np.inf,-np.inf,-np.inf,-np.inf])
-xmax = np.array([ np.pi/6, np.pi/6, np.inf, np.inf, np.inf, np.inf,
-                  np.inf, np.inf, np.inf, np.inf, np.inf, np.inf])
+# Horizon prediksi
+N = 20
 
-# Objective function
-Q = sparse.diags([0., 0., 10., 10., 10., 10., 0., 0., 0., 5., 5., 5.])
-QN = Q
-R = 0.1*sparse.eye(4)
+# Inisialisasi variabel kontrol
+delta_u = [cp.Variable((1, 1))for _ in range(N)]
 
-print("QN", QN)
-print("R", R)
+# Inisialisasi variabel state awal
+x0 = np.array([[0], [0]])  # Misal kondisi awal
 
-# Initial and reference states
-x0 = np.zeros(12)
-xr = np.array([0.,0.,1.,0.,0.,0.,0.,0.,0.,0.,0.,0.])
+# Inisialisasi variabel state
+x = [cp.Variable((2, 1)) for _ in range(N + 1)]
+x[0] = x0
 
-# Prediction horizon
-N = 10
+# Inisialisasi fungsi biaya
+J = 0
 
-# Define problem
-u = Variable((nu, N))
-x = Variable((nx, N+1))
-x_init = Parameter(nx)
-objective = 0
-constraints = [x[:,0] == x_init]
+# Inisialisasi batasan untuk state dan input kontrol
+X_constraint = cp.Parameter(2)
+U_constraint = cp.Parameter(2)
+
+# Masukkan batasan untuk state dan input kontrol
+X_constraint.value = np.array([-100, 100])  # Misal batasan state [-100, 100]
+U_constraint.value = np.array([-1, 1])  # Misal batasan input kontrol [-1, 1]
+
+
+# Loop untuk menghitung fungsi biaya
 for k in range(N):
-    objective += quad_form(x[:,k] - xr, Q) + quad_form(u[:,k], R)
-    constraints += [x[:,k+1] == Ad@x[:,k] + Bd@u[:,k]]
-    constraints += [xmin <= x[:,k], x[:,k] <= xmax]
-    constraints += [umin <= u[:,k], u[:,k] <= umax]
-objective += quad_form(x[:,N] - xr, QN)
-prob = Problem(Minimize(objective), constraints)
+    # Fungsi biaya lokal (misal: minimalkan norma Euclidean)
+    J += cp.norm(x[k]) + cp.norm(delta_u[k])
 
-# Simulate in closed loop
+    # Batasan dinamika sistem
+    constraints = [x[k + 1] == A @ x[k] + B @ delta_u[k]]
 
-# nsim = 15
-# for i in range(nsim):
-#     x_init.value = x0
-#     # prob.solve(solver=OSQP, warm_starting=True)
-#     prob.solve(solver=OSQP, verbose=False)
-#     if prob.status == OPTIMAL:
-#         print(f'Simulation {i}: Success')
-#         print("Objective value:", prob.value)
-#         print("Control inputs:", u.value)
-#     else:
-#         print("Problem not solved")
-#         print("Status:", prob.status)
-#     x0 = Ad@x0 + Bd@u[:,0].value
+    # Batasan state
+    constraints += [cp.norm(x[k + 1]) <= X_constraint]
+
+    # Batasan input kontrol
+    constraints += [cp.norm(delta_u[k]) <= U_constraint]
+
+    # Tambahkan batasan ke masalah optimisasi
+    problem = cp.Problem(cp.Minimize(J), constraints)
+
+    # Solver dengan GUROBI
+    problem.solve(solver=cp.GUROBI)
+
+    # Print hasil
+    print("Optimal input control:", delta_u.value)

@@ -4,6 +4,10 @@ import random
 from autonomous_vehicle.msg import state
 from constants import *
 
+def path_generator():
+    pass
+
+
 if __name__=='__main__':
     rospy.init_node("state_publisher")
     rospy.loginfo("Node has been started")
