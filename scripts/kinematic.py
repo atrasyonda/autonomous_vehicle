@@ -27,7 +27,7 @@ if __name__=='__main__':
     rospy.init_node("kinematic_node")
     rospy.loginfo("Node has been started")
     k_state = rospy.Subscriber("/car/state", state, callback)
-    # pub = rospy.Publisher("/car/model", Twist, queue_size=10 )
+    pub = rospy.Publisher("/car/next_state", state, queue_size=10 )
     rate = rospy.Rate(1)
     while not rospy.is_shutdown():
         rate.sleep()

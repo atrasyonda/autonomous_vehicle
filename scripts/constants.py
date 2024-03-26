@@ -52,17 +52,6 @@ delta_u_min = np.array([[-2], [-0.3]])  # batas bawah perubahan input --> jurnal
 Q_k = np.diag([1,1,3])  # kinematic control state weight matrix --> JURNAL
 R_k = np.diag([1,3])  # kinematic control input weight matrix --> JURNAL
 
-eigenvalues = np.linalg.eigvals(Q_k)
-if np.all(eigenvalues >= 0):
-    print("Q_k adalah matriks positif semidefinit.")
-else:
-    print("Q_k bukan matriks positif semidefinit.")
-
-eigenvalues = np.linalg.eigvals(R_k)
-if np.all(eigenvalues >= 0):
-    print("R_k adalah matriks positif semidefinit.")
-else:
-    print("R_k bukan matriks positif semidefinit.")
 
 # Dynamic LPV-LQR Controller Design
 Q_d = 0.9*np.diag([0.66, 0.01, 0.33])  # dynamic control state weight matrix --> JURNAL
@@ -77,3 +66,17 @@ x_dot = 0
 y_dot = 0
 delta = 0
 
+"""
+================  CEK EIGEN VALUE MATRIKS BOBOT =================
+eigenvalues = np.linalg.eigvals(Q_k)
+if np.all(eigenvalues >= 0):
+    print("Q_k adalah matriks positif semidefinit.")
+else:
+    print("Q_k bukan matriks positif semidefinit.")
+
+eigenvalues = np.linalg.eigvals(R_k)
+if np.all(eigenvalues >= 0):
+    print("R_k adalah matriks positif semidefinit.")
+else:
+    print("R_k bukan matriks positif semidefinit.")
+"""
