@@ -58,7 +58,7 @@ Q_d = 0.9*np.diag([0.66, 0.01, 0.33])  # dynamic control state weight matrix -->
 R_d = 0.1*np.diag([0.5, 0.5])  # dynamic control input weight matrix --> JURNAL
 
 # inisiasi state
-psi_dot = 0
+psi_r_dot = 0
 xr_dot = 0
 psi = 0
 
