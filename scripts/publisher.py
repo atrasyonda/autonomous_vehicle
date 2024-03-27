@@ -107,14 +107,16 @@ if __name__=='__main__':
                 Y_k = 0
                 Psi_k = 0
             else : 
-                X_k, Y_k, Psi_k = rospy.Subscriber("/car/next_state", state, callback=odom_publisher)
-            print ("X_k", X_k)
-            print ("Y_k", Y_k)
-            print ("Psi_k", Psi_k)
+                sub = rospy.Subscriber("/car/next_state", state, callback=odom_publisher)
+
+            # print ("X_k", X_k)
+            # print ("Y_k", Y_k)
+            # print ("Psi_k", Psi_k)
+            print(X_r[i])
             # === kinematic control =====
-            car.x_e = X_r[i] - X_k
-            car.y_e = Y_r[i] - Y_k
-            car.psi_e = Psi_r[i] - Psi_k
+            car.x = X_r[i] - X_k
+            car.y = Y_r[i] - Y_k
+            car.psi = Psi_r[i] - Psi_k
             # === kinematic reference =====
             car.x_dot_ref = xr_dot[i]
             car.psi_dot_ref = psi_r_dot[i]
@@ -127,7 +129,7 @@ if __name__=='__main__':
             car.delta=round(random.uniform(delta_min, delta_max),2) # also for dynamic scheduling variable
             
             pub.publish(car)
-            log_message = "x_e: %s, y_e: %s, psi_e: %s,x_dot_ref: %s, psi_dot_ref: %s, x_dot: %s, y_dot: %s, psi_dot: %s, delta: %s" % (car.x_e, car.y_e,car.psi_e, car.x_dot_ref,car.psi_dot_ref,car.x_dot,car.y_dot,car.psi_dot,car.delta)
+            log_message = "x_e: %s, y_e: %s, psi_e: %s,x_dot_ref: %s, psi_dot_ref: %s, x_dot: %s, y_dot: %s, psi_dot: %s, delta: %s" % (car.x, car.y,car.psi, car.x_dot_ref,car.psi_dot_ref,car.x_dot,car.y_dot,car.psi_dot,car.delta)
             rospy.loginfo(log_message)
             rate.sleep()
 

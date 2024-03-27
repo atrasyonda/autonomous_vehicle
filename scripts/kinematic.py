@@ -14,7 +14,9 @@ P, Ki, S= Kinematic.getMPCSet(Ac_pk,Bc)
 a = 0
 
 def callback(data):
-    x_k = np.array([[data.x_e], [data.y_e], [data.psi_e]])
+    print (data)
+
+    x_k = np.array([[data.x], [data.y], [data.psi]])
     u_k = np.array([[data.delta], [a]])
     rc_k = np.array([[data.x_dot_ref*data.psi_e], [data.psi_dot_ref]])
     # print("state : ", x_k.shape)
