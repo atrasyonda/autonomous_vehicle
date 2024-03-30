@@ -14,14 +14,23 @@ P, Ki, S= Kinematic.getMPCSet(Ac_pk,Bc)
 a = 0
 
 def callback(data):
-    print (data)
-
+    # print (data)
     x_k = np.array([[data.x], [data.y], [data.psi]])
     u_k = np.array([[data.delta], [a]])
-    rc_k = np.array([[data.x_dot_ref*data.psi_e], [data.psi_dot_ref]])
+    x_dot_psi_e = [x * data.psi for x in data.x_dot_ref]
+    
+    rc_k = np.array([[x_dot_psi_e], [data.psi_dot_ref]])
+    # print (rc_k.shape)
+
     # print("state : ", x_k.shape)
     Ac = Kinematic.getLPV(data, Ac_pk)  # get LPV model
-    Kinematic.MPC(x_k, u_k, rc_k, Ac, Bc, P, S)
+    x_opt, deltau_opt, u_opt = Kinematic.MPC(x_k, u_k, rc_k, Ac, Bc, P, S)
+
+    # ======= Calculate next state ========
+    control_signal = u_opt[0,:]
+    next_state = Ac@x_k + Bc@control_signal - Bc@rc_k[:,:,0]
+    # print("next_x_opt : ", x_opt[1])
+    # print("next_state : ", next_state)
 
 
 

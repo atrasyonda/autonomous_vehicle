@@ -6,6 +6,9 @@ import matplotlib.pyplot as plt
 from constants import *
 from function import Kinematic
 
+
+i = 0
+
 def path_generator():
     # Plot the reference trajectory
     t=np.arange(0,10+Tc,Tc) # duration of the entire manoeuvre
@@ -100,38 +103,39 @@ if __name__=='__main__':
     rate = rospy.Rate(1)
     while not rospy.is_shutdown():
         car = state()
-        for i in range(len(X_r)):
-            print ("i = ", i)
-            if i == 0 :
-                X_k = 0
-                Y_k = 0
-                Psi_k = 0
-            else : 
-                sub = rospy.Subscriber("/car/next_state", state, callback=odom_publisher)
+        # for i in range(len(X_r)):
+        print ("i = ", i)
+        if i == 0 :
+            X_k = 0
+            Y_k = 0
+            Psi_k = 0
+        else : 
+            sub = rospy.Subscriber("/car/next_state", state, callback=odom_publisher)
 
-            # print ("X_k", X_k)
-            # print ("Y_k", Y_k)
-            # print ("Psi_k", Psi_k)
-            print(X_r[i])
-            # === kinematic control =====
-            car.x = X_r[i] - X_k
-            car.y = Y_r[i] - Y_k
-            car.psi = Psi_r[i] - Psi_k
-            # === kinematic reference =====
-            car.x_dot_ref = xr_dot[i]
-            car.psi_dot_ref = psi_r_dot[i]
+        # print ("X_k", X_k)
+        # print ("Y_k", Y_k)
+        # print ("Psi_k", Psi_k)
+        # print(X_r[i])
+        # === kinematic control =====
+        car.x = X_r[i] - X_k
+        car.y = Y_r[i] - Y_k
+        car.psi = Psi_r[i] - Psi_k
+        # === kinematic reference =====
+        car.x_dot_ref = xr_dot[i]
+        car.psi_dot_ref = psi_r_dot[i] 
 
-            # === dynamic control ======
-            car.x_dot=round(random.uniform(x_dot_min, x_dot_max),2) # also for dynamic scheduling variable
-            car.y_dot=round(random.uniform(y_dot_min, y_dot_max),2) # also for dynamic scheduling variable
-            car.psi_dot = round(random.uniform(psi_dot_min, psi_dot_max),2) # also for kinematic scheduling variable
-            
-            car.delta=round(random.uniform(delta_min, delta_max),2) # also for dynamic scheduling variable
-            
-            pub.publish(car)
-            log_message = "x_e: %s, y_e: %s, psi_e: %s,x_dot_ref: %s, psi_dot_ref: %s, x_dot: %s, y_dot: %s, psi_dot: %s, delta: %s" % (car.x, car.y,car.psi, car.x_dot_ref,car.psi_dot_ref,car.x_dot,car.y_dot,car.psi_dot,car.delta)
-            rospy.loginfo(log_message)
-            rate.sleep()
+        # === dynamic control ======
+        car.x_dot=round(random.uniform(x_dot_min, x_dot_max),2) # also for dynamic scheduling variable
+        car.y_dot=round(random.uniform(y_dot_min, y_dot_max),2) # also for dynamic scheduling variable
+        car.psi_dot = round(random.uniform(psi_dot_min, psi_dot_max),2) # also for kinematic scheduling variable
+        
+        car.delta=round(random.uniform(delta_min, delta_max),2) # also for dynamic scheduling variable
+        
+        pub.publish(car)
+        log_message = "x_e: %s, y_e: %s, psi_e: %s,x_dot_ref: %s, psi_dot_ref: %s, x_dot: %s, y_dot: %s, psi_dot: %s, delta: %s" % (car.x, car.y,car.psi, car.x_dot_ref,car.psi_dot_ref,car.x_dot,car.y_dot,car.psi_dot,car.delta)
+        rospy.loginfo(log_message)
+        i = i + 1
+        rate.sleep()
 
 
 
