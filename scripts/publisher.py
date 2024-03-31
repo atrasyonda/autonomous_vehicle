@@ -89,11 +89,45 @@ def path_generator():
     # plt.show()
     return x,y,psiInt,Xr_dot,Psi_dot
 
-def odom_publisher (data, i) :
-    X_k = data.x_e
-    Y_k = data.y_e
-    Psi_k = data.psi_e
-    return X_k, Y_k, Psi_k
+def state_publisher (data,i) :
+    rospy.loginfo("Received data: %d", data)
+    car = state()
+    X_k = data.x
+    Y_k = data.y
+    Psi_k = data.psi
+    x_dot = data.x_dot
+    psi_dot = data.psi_dot
+
+    # print ("X_k", X_k)
+    # print ("Y_k", Y_k)
+    # print ("Psi_k", Psi_k)
+    # print(X_r[i])
+    # === kinematic control =====
+    car.x = X_r[i] - X_k
+    car.y = Y_r[i] - Y_k
+    car.psi = Psi_r[i] - Psi_k
+    # === kinematic reference =====
+    car.x_dot_ref = xr_dot[i]
+    car.psi_dot_ref = psi_r_dot[i] 
+
+    # === dynamic control ======
+    car.x_dot= x_dot
+    # round(random.uniform(x_dot_min, x_dot_max),2) # also for kinematic scheduling variable
+    car.psi_dot = psi_dot
+    # round(random.uniform(psi_dot_min, psi_dot_max),2) # also for kinematic scheduling variable
+    
+    car.y_dot=round(random.uniform(y_dot_min, y_dot_max),2) # also for dynamic scheduling variable
+    car.delta=round(random.uniform(delta_min, delta_max),2) # also for dynamic scheduling variable
+    
+    pub.publish(car)
+    log_message = "== PUBLISH DATA == x_e: %s, y_e: %s, psi_e: %s,x_dot_ref: %s, psi_dot_ref: %s, x_dot: %s, y_dot: %s, psi_dot: %s, delta: %s" % (car.x, car.y,car.psi, car.x_dot_ref,car.psi_dot_ref,car.x_dot,car.y_dot,car.psi_dot,car.delta)
+    rospy.loginfo(log_message)
+    
+
+def listener():
+    rospy.init_node('listener_node', anonymous=True)
+    rospy.Subscriber("/car/next_state", state, callback=state_publisher)
+    rospy.spin()  
 
 if __name__=='__main__':
     X_r, Y_r, Psi_r, xr_dot, psi_r_dot = path_generator()
@@ -101,52 +135,9 @@ if __name__=='__main__':
     rospy.loginfo("Node has been started")
     pub = rospy.Publisher("/car/state", state, queue_size=10 )
     rate = rospy.Rate(1)
+
     while not rospy.is_shutdown():
-        car = state()
-        # for i in range(len(X_r)):
-        print ("i = ", i)
-        if i == 0 :
-            X_k = 0
-            Y_k = 0
-            Psi_k = 0
-        else : 
-            sub = rospy.Subscriber("/car/next_state", state, callback=odom_publisher)
-
-        # print ("X_k", X_k)
-        # print ("Y_k", Y_k)
-        # print ("Psi_k", Psi_k)
-        # print(X_r[i])
-        # === kinematic control =====
-        car.x = X_r[i] - X_k
-        car.y = Y_r[i] - Y_k
-        car.psi = Psi_r[i] - Psi_k
-        # === kinematic reference =====
-        car.x_dot_ref = xr_dot[i]
-        car.psi_dot_ref = psi_r_dot[i] 
-
-        # === dynamic control ======
-        car.x_dot=round(random.uniform(x_dot_min, x_dot_max),2) # also for dynamic scheduling variable
-        car.y_dot=round(random.uniform(y_dot_min, y_dot_max),2) # also for dynamic scheduling variable
-        car.psi_dot = round(random.uniform(psi_dot_min, psi_dot_max),2) # also for kinematic scheduling variable
-        
-        car.delta=round(random.uniform(delta_min, delta_max),2) # also for dynamic scheduling variable
-        
-        pub.publish(car)
-        log_message = "x_e: %s, y_e: %s, psi_e: %s,x_dot_ref: %s, psi_dot_ref: %s, x_dot: %s, y_dot: %s, psi_dot: %s, delta: %s" % (car.x, car.y,car.psi, car.x_dot_ref,car.psi_dot_ref,car.x_dot,car.y_dot,car.psi_dot,car.delta)
-        rospy.loginfo(log_message)
-        i = i + 1
+        pub.publish(state(x = 0, y = 0, psi = 0, x_dot = 0, psi_dot = 0, y_dot = 0, delta = 0, x_dot_ref = xr_dot[0], psi_dot_ref = psi_r_dot[0]))
+        print("Publishing data: ", i)
         rate.sleep()
-
-
-
-
-
-        """
-        # === kinematic control =====
-        car.x_e = round(random.uniform(0, 5),2)
-        car.y_e = round(random.uniform(0, 5),2)
-        car.psi_e = round(random.uniform(psi_min, psi_max),2) # also for kinematic scheduling variable
-        # for reference r_c
-        car.x_dot_ref = round(random.uniform(xr_dot_min, xr_dot_max),2) # also for kinematic scheduling variable
-        car.psi_dot_ref = round(random.uniform(0, 5),2)
-        """
+        

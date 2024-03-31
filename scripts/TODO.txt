@@ -3,19 +3,9 @@ Struktur Node
 Publisher --> Kinematic --> LMI --> MPC
 Publisher --> Dynamic --> LMI --> LQR
 
-Coba simulasi open loop untuk LPV-LQR
-Pahami alur program MPC dari referensi 
 
-
-Pahami lagi yang dimaksud state_vehicle 
-(data yg diukur dari mobil) , vehicle input (data yg
-dikirim ke mobil) serta state system keseluruhan
-
-tinggal pahami state system kontrol secara keseluruhan 
---> mana state yg jadi output, mana yg jadi feedback untuk iterasi selanjutnya sehingga tau augmented_state_vectornya gimana
-
-sudah buat augmented_state_vector , sudah perbaiki state msg dan Publisher
 
 TODO : 
-Membenarkan variabel yg rancu pd function Kinematic dan Dynamic terkait state, 
-rc, input dan schedulling variable
+
+Bikin topic untuk store next state sama  control input u hasil optimasi MPC
+Sehingga bisa dipakai untuk loop selanjutnya

@@ -14,7 +14,7 @@ P, Ki, S= Kinematic.getMPCSet(Ac_pk,Bc)
 a = 0
 
 def callback(data):
-    # print (data)
+    print (data)
     x_k = np.array([[data.x], [data.y], [data.psi]])
     u_k = np.array([[data.delta], [a]])
     x_dot_psi_e = [x * data.psi for x in data.x_dot_ref]
@@ -30,7 +30,11 @@ def callback(data):
     control_signal = u_opt[0,:]
     next_state = Ac@x_k + Bc@control_signal - Bc@rc_k[:,:,0]
     # print("next_x_opt : ", x_opt[1])
-    # print("next_state : ", next_state)
+    print("=====================================")
+    print("next_state : ", next_state)
+    print("control_signal : ", control_signal)
+    pub.publish(state(x = next_state[0,0], y = next_state[1,0], psi = next_state[2,0], 
+                      x_dot = control_signal[0,0], psi_dot = control_signal[0,0]))
 
 
 
