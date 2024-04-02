@@ -14,12 +14,12 @@ import time
 
 def path_generator():
    # Plot the reference trajectory
-    trajectory = 3
+    trajectory = 2
     t=np.arange(0,10+Tc,Tc) # duration of the entire manoeuvre
     lane_width=7 # [m]
     r=8
     f=0.01
-    x_dot = 20
+    x_dot = 10
     
     # Define the x length, depends on the car's longitudinal velocity
     x=np.linspace(0,x_dot*t[-1],num=len(t))
@@ -87,20 +87,24 @@ P, Ki, S= Kinematic.getMPCSet(Ac_pk,Bc)
 
 def openloop_control (data):
     
-    x_k = np.array([[data.x], [data.y], [data.psi]]) 
-    u_k = np.array([[data.x_dot], [data.psi_dot]])
+    # Construct Vector of Schedulling Variables
+    pk = [data.psi_dot, data.x_dot_ref, data.psi]
 
-    x_dot_psi_e = [x * data.psi for x in data.x_dot_ref]
-    rc_k = np.array([[x_dot_psi_e], [data.psi_dot_ref]])
-    # print (rc_k.shape)
+    # Construct the State-Space model
+    X_k = np.array([[data.x], [data.y], [data.psi]])  # get current error state 
+    U_k = np.array([[data.x_dot], [data.psi_dot]]) # get previous control signal
 
-    # print("state : ", x_k.shape)
-    Ac = Kinematic.getLPV(data, Ac_pk)  # get LPV model
-    next_x_opt, u_opt = Kinematic.MPC(x_k, u_k, rc_k, Ac_pk, Ac, Bc, P, S)
+    # Construct reference signal for N horizon prediction
+    xr_dot_psi_e = [x * np.cos(data.psi) for x in data.x_dot_ref]
+    Rc_k = np.array([[xr_dot_psi_e], [data.psi_dot_ref]])
+
+    
+    next_x_opt, u_opt = Kinematic.LPV_MPC(X_k, U_k, Rc_k, pk, Ac_pk, Bc, P, S)
 
     # ======= Calculate next state ========
     control_signal = u_opt
-    next_state = Ac@x_k + Bc@control_signal - Bc@rc_k[:,:,0]
+    # control_signal = U_k
+    next_state = Kinematic.calculate_new_states(Ac_pk, pk, X_k, Bc, control_signal, Rc_k, 0)
 
     print("=====================================")
     print("next_state : ", next_state)

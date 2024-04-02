@@ -190,26 +190,27 @@ class Kinematic:
             print("S bukan matriks positif semidefinit.")
 
         return P, outputKi, S
+    def calculate_new_states(Ac_pk, pk, X_k, Bc, U_k, Rc_k, i):
+        Ac = Kinematic.getLPV(pk[0], pk[1][i], pk[2], Ac_pk) # Ac is a function of schedulling vector psi_dot, xr_dot[i], psi_e 
+        
+        # X_k+i+1 = Ac(pk) @ X_k + Bc @ U_k - Bc @ Rc_k[i]
+        next_state = Ac@X_k + Bc@U_k - Bc@Rc_k[:,:,i]
+        return next_state
+
     def LPV_MPC(x_k, u_k, r_k, pk, Ac_pk, Bc, P, S):
-        Ac_0 = Kinematic.getLPV(pk[0], pk[1][0], pk[2], Ac_pk)
-
-        print ("Ac_0 : ", Ac_0)
-
         X_k = [cp.Variable((n, 1)) for _ in range(N+1)]
         delta_u_k = [cp.Variable((m, 1)) for _ in range(N)]     # Control input at time k
         U_k = [cp.Variable((m, 1)) for _ in range(N)]     # Control input at time k        
         Jk = 0
         for i in range (N):
             # print ("iterasi ke-",i)
-            # print ("Curvature X", (X_k[i].T @ Q_k @ X_k[i]).curvature)
-            # print ("Curvature X", cp.quad_form(X_k[i], Q_k).curvature)
-            # Jk += X_k[i].T @ Q_k @ X_k[i] + delta_u_k[i].T @ R_k @ delta_u_k[i]
             Jk += cp.quad_form(X_k[i], Q_k) + cp.quad_form(delta_u_k[i], R_k)
             if i == 0 :
                 constraints = [X_k[i]==x_k]      # Set initial state
                 U_k[i-1].value = u_k
             constraints += [U_k[i] == U_k[i-1]+delta_u_k[i]]
-            constraints +=  [X_k[i+1] == Ac @ X_k[i] + Bc @ U_k[i] - Bc @ r_k[:,:,i]]
+            # constraints +=  [X_k[i+1] == Ac @ X_k[i] + Bc @ U_k[i] - Bc @ r_k[:,:,i]]
+            constraints += [X_k[i+1] == Kinematic.calculate_new_states(Ac_pk, pk, X_k[i], Bc, U_k[i], r_k, i)]
             constraints += [delta_u_min <= delta_u_k[i], delta_u_k[i] <= delta_u_max]
             constraints += [u_min <= U_k[i], U_k[i] <= u_max]
         # Jk += X_k[N].T @ P @ X_k[N]
