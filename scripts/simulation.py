@@ -13,7 +13,8 @@ import time
 
 
 def path_generator():
-    # Plot the reference trajectory
+   # Plot the reference trajectory
+    trajectory = 3
     t=np.arange(0,10+Tc,Tc) # duration of the entire manoeuvre
     lane_width=7 # [m]
     r=8
@@ -22,16 +23,22 @@ def path_generator():
     
     # Define the x length, depends on the car's longitudinal velocity
     x=np.linspace(0,x_dot*t[-1],num=len(t))
-    statesTotal=np.zeros((len(t),n)) # It will keep track of all your states during the entire manoeuvre
-    aaa=-28/100**2
-    aaa=aaa/1.1
-    if aaa<0:
-        bbb=14
-    else:
-        bbb=-14
-    y_1=aaa*(x+lane_width-100)**2+bbb
-    y_2=2*r*np.sin(2*np.pi*f*x)
-    y=(y_1+y_2)/2
+    
+    if trajectory==1:
+        y=-9*np.ones(len(t))
+    elif trajectory==2:
+        y=9*np.tanh(t-t[-1]/2)
+    elif trajectory==3:
+        aaa=-28/100**2
+        aaa=aaa/1.1
+        if aaa<0:
+            bbb=14
+        else:
+            bbb=-14
+        y_1=aaa*(x+lane_width-100)**2+bbb
+        y_2=2*r*np.sin(2*np.pi*f*x)
+        y=(y_1+y_2)/2
+        # y=(y_2)/2
     
     # Vector of x and y changes per sample time
     dx=x[1:len(x)]-x[0:len(x)-1]
@@ -54,10 +61,14 @@ def path_generator():
         else:
             psiInt[i]=psiInt[i-1]+dpsi[i-1]
 
+    Vd = dx/Tc
+    Wd = dpsi/Tc
+
     # Inisialisasi buffer dengan N elemen pertama dari data (N = horizon prediction)
     buffer_size = N
-    Xr_dot = [dx[i:i+buffer_size] for i in range(len(dx) - buffer_size + 1)]
-    Psi_dot = [dpsi[i:i+buffer_size] for i in range(len(dpsi) - buffer_size + 1)]
+    Xr_dot = [Vd[i:i+buffer_size] for i in range(len(Vd) - buffer_size + 1)]
+    Psi_dot = [Wd[i:i+buffer_size] for i in range(len(Wd) - buffer_size + 1)]
+
     # ====== PLOT TRAJECTORY =====
     # plt.plot(x,y,'b',linewidth=2,label='The trajectory')
     # # plt.plot(x,statesTotal[:,3],'--r',linewidth=2,label='Car position')
@@ -73,35 +84,39 @@ def path_generator():
 Ac_pk, Bc = Kinematic.getModel()  # get model parameters
 P, Ki, S= Kinematic.getMPCSet(Ac_pk,Bc) 
 # set initial variabel
-a = 0
 
 def openloop_control (data):
     
-    x_k = np.array([[data.x], [data.y], [data.psi]])
-    u_k = np.array([[data.delta], [a]])
+    x_k = np.array([[data.x], [data.y], [data.psi]]) 
+    u_k = np.array([[data.x_dot], [data.psi_dot]])
+
     x_dot_psi_e = [x * data.psi for x in data.x_dot_ref]
-    
     rc_k = np.array([[x_dot_psi_e], [data.psi_dot_ref]])
     # print (rc_k.shape)
 
     # print("state : ", x_k.shape)
     Ac = Kinematic.getLPV(data, Ac_pk)  # get LPV model
-    x_opt, deltau_opt, u_opt = Kinematic.MPC(x_k, u_k, rc_k, Ac, Bc, P, S)
+    next_x_opt, u_opt = Kinematic.MPC(x_k, u_k, rc_k, Ac_pk, Ac, Bc, P, S)
 
     # ======= Calculate next state ========
-    control_signal = u_opt[0,:]
+    control_signal = u_opt
     next_state = Ac@x_k + Bc@control_signal - Bc@rc_k[:,:,0]
-    # print("next_x_opt : ", x_opt[1])
+
     print("=====================================")
     print("next_state : ", next_state)
     print("control_signal : ", control_signal)
     return next_state, control_signal
-    # pub.publish(state(x = next_state[0,0], y = next_state[1,0], psi = next_state[2,0], 
-    #                   x_dot = control_signal[0,0], psi_dot = control_signal[0,0]))
 
 
 if __name__=='__main__':
     X_r, Y_r, Psi_r, xr_dot, psi_r_dot = path_generator()
+    # print("X_r : ", len(X_r))
+    # print("Y_r : ", len(Y_r))
+    # print("Psi_r : ", len(Psi_r))
+    # print("xr_dot : ", len(xr_dot))
+    # print("psi_r_dot : ", len(psi_r_dot))
+    # time.sleep(5)
+
     car_pos_x = [] 
     car_pos_y= [] 
     car_psi = []
@@ -142,13 +157,13 @@ if __name__=='__main__':
         car.x_dot_ref = xr_dot[i]
         car.psi_dot_ref = psi_r_dot[i] 
 
-        print("===========================")
-        print("X_eror : ",X_r[i], " - ", X_k, " = ", car.x)
-        print("Y_error : ", Y_r[i], " - ", Y_k, " = ", car.y)
-        print("Psi_error : ",Psi_r[i], " - ", Psi_k, " = ", car.psi)
-        print("Vd  : ", car.x_dot_ref)
-        print("W omega : ", car.psi_dot_ref)
-        print("===========================")
+        # print("===========================")
+        # print("X_eror : ",X_r[i], " - ", X_k, " = ", car.x)
+        # print("Y_error : ", Y_r[i], " - ", Y_k, " = ", car.y)
+        # print("Psi_error : ",Psi_r[i], " - ", Psi_k, " = ", car.psi)
+        # print("Vd  : ", car.x_dot_ref)
+        # print("W omega : ", car.psi_dot_ref)
+        # print("===========================")
     
 
         next_state, control_signal = openloop_control(car)

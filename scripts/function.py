@@ -63,16 +63,13 @@ class Kinematic:
         return Ac_pk, Bc
 
 
-    def getLPV(car:state, Ac_pk):
-        psi_dot= car.psi_dot_ref[0]
-        xr_dot = car.x_dot_ref[0]
-        psi=car.psi
+    def getLPV(psi_dot, xr_dot, psi_e, Ac_pk):
 
         nu0_psidot= (psi_dot_max-psi_dot)/(psi_dot_max-psi_dot_min)
         nu1_psidot= 1-nu0_psidot
         nu0_xrdot= (xr_dot_max-xr_dot)/(xr_dot_max-xr_dot_min)
         nu1_xrdot= 1-nu0_xrdot
-        nu0_psi= (psi_max-psi)/(psi_max-psi_min)
+        nu0_psi= (psi_max-psi_e)/(psi_max-psi_min)
         nu1_psi= 1-nu0_psi
         
         miu_pk = np.array([
@@ -193,7 +190,11 @@ class Kinematic:
             print("S bukan matriks positif semidefinit.")
 
         return P, outputKi, S
-    def MPC(x_k, u_k, r_k, Ac, Bc, P, S): 
+    def LPV_MPC(x_k, u_k, r_k, pk, Ac_pk, Bc, P, S):
+        Ac_0 = Kinematic.getLPV(pk[0], pk[1][0], pk[2], Ac_pk)
+
+        print ("Ac_0 : ", Ac_0)
+
         X_k = [cp.Variable((n, 1)) for _ in range(N+1)]
         delta_u_k = [cp.Variable((m, 1)) for _ in range(N)]     # Control input at time k
         U_k = [cp.Variable((m, 1)) for _ in range(N)]     # Control input at time k        
@@ -231,96 +232,89 @@ class Kinematic:
                 if j < N:
                     Delta_U_optimized[j]=delta_u_k[j].value
                     U_k_optimized[j]=U_k[j].value
+
+            u_opt = U_k_optimized[0]
+            x_opt = Xk_optimized[1]
+            print("next_x_opt : ", x_opt[1])
         else:
             print("Problem not solved")
             print("Status:", problem.status)
-
+            # Agar program tidak eror dan loop terus berjalan, 
+            # maka nilai u yang di return adalah nilai sebelumnya
+            x_opt = 0
+            u_opt = u_k + delta_u_max/2
+        
         # print("Xk_optimized", Xk_optimized)
         # print("Delta_U_optimized", Delta_U_optimized)
         # print("U_k_optimized", U_k_optimized)
-        return Xk_optimized, Delta_U_optimized, U_k_optimized
+            
+        return x_opt, u_opt
         #===========================================================
-        
-    def MPC2(x_k, u_k, r_k, Ac, Bc, P, Ki, S): 
-        """=====================================================
-        A_aug = [A , B] --> dimension (5x5)
-                [O , I]
-        state ---> [x_k+1] = [x k]   --> dimension (5x1)
-                    [u_k]    [u_k-1]
-        B1_aug = [B] --> dimension (5x2)
-                [I]
-        input ---> [delta_u_k] --> dimension (2x1)
-        B2_aug = [B] --> dimension (5x2)
-                 [O]   
-        reference rc ---> [vd cos psi , omega_d] --> dimension (2x1)              
-        ========================================================
-        """
-        # A_aug=np.concatenate((Ac,Bc),axis=1)
-        # temp1=np.zeros((np.size(Bc,1),np.size(Ac,1)))
-        # temp2=np.identity(np.size(Bc,1))
-        # temp=np.concatenate((temp1,temp2),axis=1)
-        # A_aug=np.concatenate((A_aug,temp),axis=0)
-        # # print("Ac", Ac)
-        # # print("Bc", Bc)
-        # # print("A_aug: ", A_aug)
-        # B_aug=np.concatenate((Bc,np.identity(np.size(Bc,1))),axis=0)
-        # # print("B_aug: ", B_aug.shape)
+    
+    def MPC2(x_k, u_k, r_k, Ac_pk, Ac_0, Bc, P, S): 
+        X_k = [cp.Variable((n, 1)) for _ in range(N+1)]
+        delta_u_k = [cp.Variable((m, 1)) for _ in range(N)]     # Control input at time k
+        U_k = [cp.Variable((m, 1)) for _ in range(N)]     # Control input at time k        
+        Jk = 0
+        for i in range (N):
+            # print ("iterasi ke-",i)
+            # print ("Curvature X", (X_k[i].T @ Q_k @ X_k[i]).curvature)
+            # print ("Curvature X", cp.quad_form(X_k[i], Q_k).curvature)
+            # Jk += X_k[i].T @ Q_k @ X_k[i] + delta_u_k[i].T @ R_k @ delta_u_k[i]
+            Jk += cp.quad_form(X_k[i], Q_k) + cp.quad_form(delta_u_k[i], R_k)
+            if i == 0 :
+                constraints = [X_k[i]==x_k]      # Set initial state
+                U_k[i-1].value = u_k
+                Ac = Ac_0
+            else :
+                xr_dot = r_k[0,0,i]
+                psi_dot = U_k[i-1][1]
+                psi_e = X_k[i][2]
+                constraints += [Ac == Kinematic.getLPV(psi_dot, xr_dot, psi_e, Ac_pk)]
+            constraints += [U_k[i] == U_k[i-1]+delta_u_k[i]]
+            constraints +=  [X_k[i+1] == Ac @ X_k[i] + Bc @ U_k[i] - Bc @ r_k[:,:,i]]
+            constraints += [delta_u_min <= delta_u_k[i], delta_u_k[i] <= delta_u_max]
+            constraints += [u_min <= U_k[i], U_k[i] <= u_max]
+        # Jk += X_k[N].T @ P @ X_k[N]
+        # constraints += [X_k[N].T @ S @ X_k[N]<=1]
+        Jk += cp.quad_form(X_k[N], P)
+        constraints += [cp.quad_form(X_k[N], S)<=1]
+        # Define and solve the optimization problem
 
-        X_k = [cp.Variable((n, 1))]
-        
-        # delta_u_k = [cp.Variable((m, 1)) for _ in range(N)]     # Control input at time k
-        # U_k = [cp.Variable((m, 1)) for _ in range(N)]     # Control input at time k        
-        # Jk = 0
-        
-        # for i in range (N):
-        #     # print("iterasi ke-",i)
-        #     Jk += cp.quad_form(X_k[i], Q_k) + cp.quad_form(delta_u_k[i], R_k)
-        #     if i == 0 :
-        #         constraints = [X_k[i]==x_k]      # Set initial state
-        #         U_k[i-1].value = u_k
-        #     constraints += [U_k[i] == U_k[i-1]+delta_u_k[i]]
-        #     constraints +=  [X_k[i+1] == Ac @ X_k[i] + Bc @ delta_u_k[i] - Bc @ rc_k]
-        #     constraints += [delta_u_min <= delta_u_k[i], delta_u_k[i] <= delta_u_max]
-        #     constraints += [u_min <= U_k[i], U_k[i] <= u_max]
-        # Jk += cp.quad_form(X_k[N], P)
-        # constraints += [cp.quad_form(X_k[N], S)<=1]
-        # # Define and solve the optimization problem
-        # objective = cp.Minimize(Jk)
-        # problem = cp.Problem(objective, constraints)
-        # problem.solve(solver=cp.GUROBI, verbose=True)
-        # if problem.status == cp.OPTIMAL:
-        #     print("Jk_optimized = ", problem.value)
-        #     print ("State Optimized")
-        #     for  j in range(len(X_k)):
-        #         print(X_k[j].value)
-        #     print ("Input")
-        #     for  j in range(len(X_k)):
-        #         print(X_k[j].value)
-        # else:
-        #     print("Problem not solved")
-        #     print("Status:", problem.status)
-
-    def MPC3(x_k, u_k, rc_k, Ac, Bc, P, S): # at initial state
-        X_k = cp.Variable((n, 1))
-        delta_u_k = cp.Variable((m, 1))     # Control input at time k
-        U_k = cp.Variable((m, 1))    # Control input at time k        
-        Jk = X_k.T @ Q_k @ X_k + delta_u_k.T @ R_k @ delta_u_k
-        constraints = [X_k==x_k]
-        constraints += [U_k == u_k+delta_u_k]
-        constraints += [delta_u_min <= delta_u_k, delta_u_k <= delta_u_max]
-        constraints += [u_min <= U_k, U_k <= u_max]
         objective = cp.Minimize(Jk)
         problem = cp.Problem(objective, constraints)
-        problem.solve(solver=cp.GUROBI, verbose=True)  
-        # problem.solve(solver=cp.SCS, verbose=True) # yang bisa ECOS,SCS
+        # problem.solve(solver=cp.GUROBI, verbose=True)  
+        problem.solve(solver=cp.SCS, verbose=False) # yang bisa ECOS,SCS
         if problem.status == cp.OPTIMAL:
             print("Jk_optimized = ", problem.value)
-            print ("X_k" , X_k.value)
-            print("delta_u_k", delta_u_k.value)
-            print ("U_k" , U_k.value)
+            Xk_optimized = np.zeros([N+1,3,1])
+            Delta_U_optimized = np.zeros([N,2,1])
+            U_k_optimized = np.zeros([N,2,1])
+            for  j in range(N+1):
+                Xk_optimized[j]=X_k[j].value
+                if j < N:
+                    Delta_U_optimized[j]=delta_u_k[j].value
+                    U_k_optimized[j]=U_k[j].value
+
+            u_opt = U_k_optimized[0]
+            x_opt = Xk_optimized[1]
+            print("next_x_opt : ", x_opt[1])
         else:
             print("Problem not solved")
             print("Status:", problem.status)
+            # Agar program tidak eror dan loop terus berjalan, 
+            # maka nilai u yang di return adalah nilai sebelumnya
+            x_opt = 0
+            u_opt = u_k + delta_u_max/2
+        
+        # print("Xk_optimized", Xk_optimized)
+        # print("Delta_U_optimized", Delta_U_optimized)
+        # print("U_k_optimized", U_k_optimized)
+            
+        return x_opt, u_opt
+        #===========================================================
+        
+
 
 class Dynamic:
     def __init__(self) -> None:

@@ -11,25 +11,39 @@ from function import Kinematic
 Ac_pk, Bc = Kinematic.getModel()  # get model parameters
 P, Ki, S= Kinematic.getMPCSet(Ac_pk,Bc) 
 # set initial variabel
-a = 0
 
 def callback(data):
-    print (data)
-    x_k = np.array([[data.x], [data.y], [data.psi]])
-    u_k = np.array([[data.delta], [a]])
-    x_dot_psi_e = [x * data.psi for x in data.x_dot_ref]
-    
-    rc_k = np.array([[x_dot_psi_e], [data.psi_dot_ref]])
-    # print (rc_k.shape)
+    # ========= Extract the data =================
+    x_e = data.x
+    y_e = data.y
+    psi_e = data.psi
 
-    # print("state : ", x_k.shape)
-    Ac = Kinematic.getLPV(data, Ac_pk)  # get LPV model
-    x_opt, deltau_opt, u_opt = Kinematic.MPC(x_k, u_k, rc_k, Ac, Bc, P, S)
+    x_dot = data.x_dot
+    psi_dot = data.psi_dot
+
+    xr_dot = data.x_dot_ref
+    psi_r_dot = data.psi_dot_ref
+    # Construct Vector of Schedulling Variables
+    pk = [psi_dot, xr_dot, psi_e]
+    # print("pk : ", pk)
+    
+    # Construct the State-Space model
+    X_k = np.array([[x_e], [y_e], [psi_e]])  # get current error state 
+    U_k = np.array([[x_dot], [psi_dot]]) # get previous control signal
+
+    # Construct reference signal for N horizon prediction
+    xr_dot_psi_e = [x * data.psi for x in psi_r_dot]
+
+    
+    next_x_opt, u_opt = Kinematic.LPV_MPC(X_k, U_k, pk, Ac_pk, Ac, Bc, P, S)
 
     # ======= Calculate next state ========
-    control_signal = u_opt[0,:]
-    next_state = Ac@x_k + Bc@control_signal - Bc@rc_k[:,:,0]
-    # print("next_x_opt : ", x_opt[1])
+    control_signal = u_opt
+    Ac = Kinematic.getLPV(psi_dot, xr_dot[0], psi_e, Ac_pk)  # get LPV model
+    Rc_k = np.array([[xr_dot_psi_e], [psi_r_dot]])
+
+    next_state = Ac@X_k + Bc@control_signal - Bc@Rc_k[:,:,0]
+    
     print("=====================================")
     print("next_state : ", next_state)
     print("control_signal : ", control_signal)

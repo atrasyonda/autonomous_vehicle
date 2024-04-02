@@ -11,24 +11,30 @@ i = 0
 
 def path_generator():
     # Plot the reference trajectory
+    trajectory = 3
     t=np.arange(0,10+Tc,Tc) # duration of the entire manoeuvre
     lane_width=7 # [m]
     r=8
     f=0.01
-    x_dot = 20
+    x_dot = 2
     
     # Define the x length, depends on the car's longitudinal velocity
     x=np.linspace(0,x_dot*t[-1],num=len(t))
-    statesTotal=np.zeros((len(t),n)) # It will keep track of all your states during the entire manoeuvre
-    aaa=-28/100**2
-    aaa=aaa/1.1
-    if aaa<0:
-        bbb=14
-    else:
-        bbb=-14
-    y_1=aaa*(x+lane_width-100)**2+bbb
-    y_2=2*r*np.sin(2*np.pi*f*x)
-    y=(y_1+y_2)/2
+    
+    if trajectory==1:
+        y=-9*np.ones(len(t))
+    elif trajectory==2:
+        y=9*np.tanh(t-t[-1]/2)
+    elif trajectory==3:
+        aaa=-28/100**2
+        aaa=aaa/1.1
+        if aaa<0:
+            bbb=14
+        else:
+            bbb=-14
+        y_1=aaa*(x+lane_width-100)**2+bbb
+        y_2=2*r*np.sin(2*np.pi*f*x)
+        y=(y_1+y_2)/2
     
     # Vector of x and y changes per sample time
     dx=x[1:len(x)]-x[0:len(x)-1]
@@ -63,30 +69,33 @@ def path_generator():
     # print ("Dimensi X_dot", len(dx))
     # print ("Dimensi PSI_dot", len(dpsi))
 
+    Vd = dx/Tc
+    Wd = dpsi/Tc
+
     # Inisialisasi buffer dengan N elemen pertama dari data (N = horizon prediction)
     buffer_size = N
-    Xr_dot = [dx[i:i+buffer_size] for i in range(len(dx) - buffer_size + 1)]
-    Psi_dot = [dpsi[i:i+buffer_size] for i in range(len(dpsi) - buffer_size + 1)]
+    Xr_dot = [Vd[i:i+buffer_size] for i in range(len(Vd) - buffer_size + 1)]
+    Psi_dot = [Wd[i:i+buffer_size] for i in range(len(Wd) - buffer_size + 1)]
 
     # ===== PRINT BUFFER =====
     # print ("Dimensi Xr_dot = ", len(Xr_dot))
-    # print ("Xr_dot ke-0 = ", Xr_dot[0])
+    print ("Xr_dot ke-0 = ", Xr_dot[0])
     # print ("Dimensi Psi_dot = ", len(Psi_dot))
-    # print ("Psi_dot ke-0 = ", Psi_dot[0])
+    print ("Psi_dot ke-0 = ", Psi_dot[0])
 
     # for i in range(len(Xr_dot)):
     #     print("Buffer[{}]: {}".format(i, Xr_dot[i]))
     #     print("Buffer[{}]: {}".format(i, Psi_dot[i]))
 
     # ====== PLOT TRAJECTORY =====
-    plt.plot(x,y,'b',linewidth=2,label='The trajectory')
-    # plt.plot(x,statesTotal[:,3],'--r',linewidth=2,label='Car position')
-    plt.xlabel('x-position [m]',fontsize=15)
-    plt.ylabel('y-position [m]',fontsize=15)
-    plt.grid(True)
-    plt.legend(loc='upper right',fontsize='small')
-    plt.ylim(-x[-1]/2,x[-1]/2) # Scale roads (x & y sizes should be the same to get a realistic picture of the situation)
-    plt.show()
+    # plt.plot(x,y,'b',linewidth=2,label='The trajectory')
+    # # plt.plot(x,statesTotal[:,3],'--r',linewidth=2,label='Car position')
+    # plt.xlabel('x-position [m]',fontsize=15)
+    # plt.ylabel('y-position [m]',fontsize=15)
+    # plt.grid(True)
+    # plt.legend(loc='upper right',fontsize='small')
+    # plt.ylim(-x[-1]/2,x[-1]/2) # Scale roads (x & y sizes should be the same to get a realistic picture of the situation)
+    # plt.show()
     return x,y,psiInt,Xr_dot,Psi_dot
 
 def state_publisher (data) :
