@@ -7,19 +7,23 @@ N = 20 # horizon period
 
 Tc=0.1      # time sampling for kinematic control 
 Td=0.01     # time sampling for dynamic control 
+
+# ==================  CAR MODEL ========================= #
+# ==========  LPV-MPC for Autonomous Vehicle ============ #
+
 # car constants
-mass = 5       # massa mobil
-lf = 0.1    # panjang antara CoM dg roda depan
-lr = 0.1    # panjang antara CoM dg roda belakang
-I = 20      # momen inersia
-Caf = 19000 # koefisien kekakuan roda depan
-Car = 33000 # koefisien kekakuan roda belakang
+mass = 683       # massa mobil
+lf = 0.758    # panjang antara CoM dg roda depan (m)
+lr = 1.036    # panjang antara CoM dg roda belakang (m)
+I = 560.94      # momen inersia (kg.m^2)
+Caf = 24000 # koefisien kekakuan roda depan (N/rad)
+Car = 21000 # koefisien kekakuan roda belakang (N/rad)
 
 rho = 1.184 # densitas udara (kg/m^3)
-Cd = 20     # koefisien drag
-Af = 30     # front sectional area of the vehicle
-miu = 0.5   # koefisien gesekan
-g = 9.8     # konstanta gravitasi
+Cd = 0.36     # koefisien drag
+miu = 1   # koefisien gesekan
+Af = 1.91     # front sectional area of the vehicle (m^2)
+g = 9.8     # konstanta gravitasi (m/s^2)
 
 # schedulling vector variable
 psi_dot_min= -1.42  # batas bawah kecepatan anguler (rad/s)
@@ -35,6 +39,8 @@ x_dot_min = 0.1     # batas bawah kecepatan longitudinal / linier (m/s)
 x_dot_max = 20      # batas atas kecepatan longitudinal / linier (m/s)
 y_dot_min = -1      # batas bawah kecepatan lateral (m/s)
 y_dot_max = 1       # batas atas kecepatan lateral (m/s)
+a_min = -2         # batas bawah percepatan (m/s^2)
+a_max = 2          # batas atas percepatan (m/s^2)
 
 # Kinematic LPV-MPC Controller Design
 u_max = np.array([[x_dot_max], [psi_dot_max]])  # batas atas input (X_dot dan Psi_dot) --> jurnal 
@@ -43,8 +49,8 @@ u_min = np.array([[x_dot_min], [psi_dot_min]])  # batas bawah input (X_dot dan P
 # u_max = [x_dot_max, psi_dot_max]  
 # u_min = [x_dot_min, psi_dot_min]
 
-delta_u_max = np.array([[2], [0.3]])  # batas atas perubahan input --> jurnal
-delta_u_min = np.array([[-2], [-0.3]])  # batas bawah perubahan input --> jurnal
+delta_u_max = np.array([[a_max], [0.3]])  # batas atas perubahan input --> jurnal
+delta_u_min = np.array([[-a_min], [-0.3]])  # batas bawah perubahan input --> jurnal
 
 # delta_u_max = [2, 0.3]
 # delta_u_min = [-2, -0.3]

@@ -209,7 +209,6 @@ class Kinematic:
                 constraints = [X_k[i]==x_k]      # Set initial state
                 U_k[i-1].value = u_k
             constraints += [U_k[i] == U_k[i-1]+delta_u_k[i]]
-            # constraints +=  [X_k[i+1] == Ac @ X_k[i] + Bc @ U_k[i] - Bc @ r_k[:,:,i]]
             constraints += [X_k[i+1] == Kinematic.calculate_new_states(Ac_pk, pk, X_k[i], Bc, U_k[i], r_k, i)]
             constraints += [delta_u_min <= delta_u_k[i], delta_u_k[i] <= delta_u_max]
             constraints += [u_min <= U_k[i], U_k[i] <= u_max]
@@ -236,6 +235,11 @@ class Kinematic:
 
             u_opt = U_k_optimized[0]
             x_opt = Xk_optimized[1]
+
+            # Bagaimana jika Uk yg diberikan lgsung yg ke 20 Uk_N-1
+            # u_opt = U_k_optimized[19]
+            # x_opt = Xk_optimized[20]
+
             print("next_x_opt : ", x_opt[1])
         else:
             print("Problem not solved")
@@ -372,10 +376,10 @@ class Dynamic:
         # print("Bd: ", Bd)
         return Ad_vk, Bd
     
-    def getLPV(car:state, Ad_vk):
-        delta = car.delta #sudut steering
-        x_dot = car.x_dot
-        y_dot = car.y_dot
+    def LPV_LQR(vk, Ad_vk, Ki):
+        delta = vk[0] #sudut steering
+        x_dot = vk[1]
+        y_dot = vk[2]
     
         nu0_delta= (delta_max-delta)/(delta_max-delta_min)
         nu1_delta= 1-nu0_delta
@@ -395,11 +399,13 @@ class Dynamic:
             [nu1_delta*nu1_xdot*nu1_ydot],
         ])
         Ad=np.zeros([3,3])
-
+        K_vk=np.zeros([2,3])
         for i in range(2**n):
             Ad+=(miu_vk[i]*Ad_vk[i])
-        # print ("Ad : ", Ad)
-        return miu_vk, Ad
+            K_vk +=(miu_vk[i]*Ki[i])
+        print ("Ad : ", Ad)
+        print ("K_vk : ", K_vk)
+        return Ad, K_vk
     
     def getLQR(Ad_vk,Bd): 
         invQts= np.linalg.inv(Q_d)
@@ -438,3 +444,6 @@ class Dynamic:
         for i in range(2**n):
             K_vk +=(miu_vk[i]*outputKi[i])
         return K_vk
+    
+    def calculate_new_states(Ad_vk, pk, X_k, Bd, U_k, Rc_k, i):
+        Ad = Dynamic.getLPV(pk[0], pk[1][i], pk[2], Ad_vk)

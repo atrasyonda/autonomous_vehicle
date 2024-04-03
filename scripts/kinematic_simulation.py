@@ -19,7 +19,7 @@ def path_generator():
     lane_width=7 # [m]
     r=8
     f=0.01
-    x_dot = 10
+    x_dot = 15
     
     # Define the x length, depends on the car's longitudinal velocity
     x=np.linspace(0,x_dot*t[-1],num=len(t))
@@ -128,12 +128,14 @@ if __name__=='__main__':
     ref_pos_x = []
     ref_pos_y = []
     ref_psi = []
+
+    Uk = []
     for i in range(len(xr_dot)):
         print  ("%d th loop" %i)
         car = state()
         if i == 0 :
-            X_k = 0
-            Y_k = 0
+            X_k = -5
+            Y_k = 5
             Psi_k = 0
             x_dot = 0
             psi_dot = 0
@@ -172,6 +174,7 @@ if __name__=='__main__':
 
         next_state, control_signal = openloop_control(car)
 
+        Uk.append(control_signal)
         # time.sleep(1)
         i = i+1
 
@@ -186,6 +189,9 @@ if __name__=='__main__':
     print("Dimensi Y_ref", len(ref_pos_y))
     print("Dimensi Psi", len(car_psi))
     print("Dimensi Psi_ref", len(ref_psi))
+
+    print("Uk", Uk)
+    print("Dimensi Uk", len(Uk))
 
     # ====== PLOT TRAJECTORY =====
     plt.plot(ref_pos_x,ref_pos_y,'b',linewidth=2,label='The trajectory')
