@@ -8,4 +8,7 @@ Publisher --> Dynamic --> LMI --> LQR
 TODO : 
 
 Edit Constant berdasarkan jurnal referensi dahulu, sesuai 
-jurnal pd tabel 4 Dynamic Model Parameter
+jurnal pd tabel 4 Dynamic Model Parameter --> SUDAH
+
+Mengedit algoritma LMI untuk LQR sehingga optimasi dilakukan
+satu kali dengan mempertimbangkan Ai, Wi untuk i =0,1, ..., nc

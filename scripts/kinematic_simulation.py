@@ -130,12 +130,13 @@ if __name__=='__main__':
     ref_psi = []
 
     Uk = []
+    # len(xr_dot)
     for i in range(len(xr_dot)):
         print  ("%d th loop" %i)
         car = state()
         if i == 0 :
-            X_k = -5
-            Y_k = 5
+            X_k = 0
+            Y_k = 0
             Psi_k = 0
             x_dot = 0
             psi_dot = 0
