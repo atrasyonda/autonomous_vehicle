@@ -91,56 +91,44 @@ class Kinematic:
         invQts= np.linalg.inv(Q_k)
         invRts= np.linalg.inv(R_k)
         Y = cp.Variable((n, n),symmetric=True)
-        Wi = cp.Variable((m, n)) # Solusi bobot untuk kontroler bds Ai      
-        outputKi= np.zeros([8,2,3])
+        W = [cp.Variable((m, n)) for _ in range(2**n)]
+        
+        constraints = [Y>>0]
         for i in range (2**n):
-            # print(f"Indeks {i}: {element}")
-            Ai = Ac_pk[i]
-            if i == 0 :
-                lmi = cp.vstack([
-                    cp.hstack([Y, (Ai@Y+Bc@Wi).T ,Y, Wi.T]), #baris 1
-                    cp.hstack([(Ai@Y+Bc@Wi), Y, np.zeros([3,3]), np.zeros([3,2])]), #baris 2
-                    cp.hstack([Y, np.zeros([3,3]), invQts, np.zeros([3,2])]), #baris 3
-                    cp.hstack([Wi, np.zeros([2,3]), np.zeros([2,3]), invRts]) #baris 4
-                    ])
-                constraints = [lmi>=(0.3*np.eye(11)), Y>>0] # lmi definit positif dgn batasan lebih spesifik agar nilai Y dan Wi tidak nol
-                obj = cp.Minimize(0)
-                problem = cp.Problem(obj, constraints)
-                problem.solve(solver=cp.SCS)
-                if problem.status == cp.OPTIMAL:
-                    y_opt = Y.value
-                    P = np.linalg.inv(y_opt)
-                    Ki = Wi.value@P
-                    outputKi[i]=Ki
-                else:
-                    print("Problem not solved")
-                    print("Status:", problem.status)
-            else :
-                lmi = cp.vstack([
-                    cp.hstack([y_opt, (Ai@y_opt+Bc@Wi).T ,y_opt, Wi.T]), #baris 1
-                    cp.hstack([(Ai@y_opt+Bc@Wi), y_opt, np.zeros([3,3]), np.zeros([3,2])]), #baris 2
-                    cp.hstack([y_opt, np.zeros([3,3]), invQts, np.zeros([3,2])]), #baris 3
-                    cp.hstack([Wi, np.zeros([2,3]), np.zeros([2,3]), invRts]) #baris 4
-                    ])
-                constraints = [lmi>=(0.3*np.eye(11))] # lmi definit positif dgn batasan lebih spesifik agar nilai Y dan Wi tidak nol
-                obj = cp.Minimize(0)
-                problem = cp.Problem(obj, constraints)
-                problem.solve(solver=cp.SCS)
-                if problem.status == cp.OPTIMAL:
-                    Ki = Wi.value@P
-                    outputKi[i]=Ki
-                else:
-                    print("Problem not solved")
-                    print("Status:", problem.status)
-                    outputKi[i]=0
+            lmi_prob = cp.vstack([
+                cp.hstack([Y, (Ac_pk[i] @ Y + Bc @ W[i]).T ,Y, W[i].T]), #baris 1
+                cp.hstack([(Ac_pk[i] @ Y + Bc @ W[i]), Y, np.zeros([3,3]), np.zeros([3,2])]), #baris 2
+                cp.hstack([Y, np.zeros([3,3]), invQts, np.zeros([3,2])]), #baris 3
+                cp.hstack([W[i], np.zeros([2,3]), np.zeros([2,3]), invRts]) #baris 4
+                ])
+            constraints += [lmi_prob>=(0.3*np.eye(11))] # lmi definit positif dgn batasan lebih spesifik agar nilai Y dan Wi tidak nol
+        obj = cp.Minimize(0)
+        problem = cp.Problem(obj, constraints)
+        problem.solve(solver=cp.SCS)
+        if problem.status == cp.OPTIMAL:
+            # print("Optimal value", problem.value)
+            # print("Y", Y.value)
+            # print("W", [w.value for w in W])
+            outputKi= np.zeros([8,2,3])
+            y_opt = Y.value
+            P = np.linalg.inv(y_opt)
+            for i in range(2**n):
+                outputKi[i]=W[i].value @ P
+        else:
+            print("Problem not solved")
+            print("Status:", problem.status)
+
+        
         #================================================================================================
+        
         Z = cp.Variable((n, n), symmetric=True)
-        u_bar= np.array([[1.4], [20]]) # matrix 2x1
+        # u_bar= np.array([[1.4], [20]]) # matrix 2x1
+        u_bar = u_max
         u_bar_squared= u_bar@u_bar.T
 
         S= np.zeros([3,3])
-        lmi2=[]
 
+        constraints2=[]
         for i in range (2**n):
             Ai = Ac_pk[i]
             Ki = outputKi[i]
@@ -148,22 +136,25 @@ class Kinematic:
                 cp.hstack([-Z, Z@(Ai+Bc@Ki).T]), #baris 1
                 cp.hstack([(Ai+Bc@Ki)@Z, -Z]), #baris 2
                 ])
-            lmi2.append(lmi_prob)
+            constraints2 += [lmi_prob<<0]
+            constraints2 += [Ki@Z@Ki.T-u_bar_squared<<0]
+            # lmi2.append(lmi_prob)
 
         # print ("lmi2 ke 1", lmi2[0])
-        constraints2 = [lmi2[0]<<0, 
-                        lmi2[1]<<0,
-                        lmi2[2]<<0,
-                        lmi2[3]<<0,
-                        lmi2[4]<<0,
-                        lmi2[5]<<0,
-                        lmi2[6]<<0,
-                        lmi2[7]<<0,
-                        Ki@Z@Ki.T-u_bar_squared<<0] 
+        # constraints2 = [lmi2[0]<<0, 
+        #                 lmi2[1]<<0,
+        #                 lmi2[2]<<0,
+        #                 lmi2[3]<<0,
+        #                 lmi2[4]<<0,
+        #                 lmi2[5]<<0,
+        #                 lmi2[6]<<0,
+        #                 lmi2[7]<<0,
+        #                 Ki@Z@Ki.T-u_bar_squared<<0] 
         obj2 = cp.Maximize(0)
         problem2 = cp.Problem(obj2, constraints2)
         problem2.solve(solver=cp.SCS)
         if problem2.status == cp.OPTIMAL:
+            # print ("Z : ", Z.value)
             S=np.linalg.inv(Z.value)
         else:
             print("Problem not solved")
@@ -171,12 +162,15 @@ class Kinematic:
             
         # print("Output P", P)
         # print("Output Ki", outputKi)
-        S = np.array([
-            [0.465, 0, 0],
-            [0, 23.813, 76.596],
-            [0, 76.596, 257.251]
-        ])  # INI MATRIX S DARI JURNAL REFERENSI
-        # print ("Output S:" , S)
+
+        # INI MATRIX S DARI JURNAL REFERENSI
+        # S = np.array([
+        #     [0.465, 0, 0],
+        #     [0, 23.813, 76.596],
+        #     [0, 76.596, 257.251]
+        # ])  
+
+        print("S", S)
         eigenvalues = np.linalg.eigvals(P)
         if np.all(eigenvalues >= 0):
             print("P adalah matriks positif semidefinit.")
@@ -190,6 +184,7 @@ class Kinematic:
             print("S bukan matriks positif semidefinit.")
 
         return P, outputKi, S
+
     def calculate_new_states(Ac_pk, pk, X_k, Bc, U_k, Rc_k, i):
         Ac = Kinematic.getLPV(pk[0], pk[1][i], pk[2], Ac_pk) # Ac is a function of schedulling vector psi_dot, xr_dot[i], psi_e 
         

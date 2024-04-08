@@ -82,8 +82,10 @@ def path_generator():
 
 
 Ac_pk, Bc = Kinematic.getModel()  # get model parameters
+
 P, Ki, S= Kinematic.getMPCSet(Ac_pk,Bc) 
 # set initial variabel
+
 
 def openloop_control (data):
     
@@ -136,7 +138,7 @@ if __name__=='__main__':
         car = state()
         if i == 0 :
             X_k = 0
-            Y_k = 0
+            Y_k = -5
             Psi_k = 0
             x_dot = 0
             psi_dot = 0
@@ -203,7 +205,4 @@ if __name__=='__main__':
     plt.legend(loc='upper right',fontsize='small')
     plt.ylim(-ref_pos_x[-1]/2,ref_pos_x[-1]/2) # Scale roads (x & y sizes should be the same to get a realistic picture of the situation)
     plt.show()
-
-
-
 
