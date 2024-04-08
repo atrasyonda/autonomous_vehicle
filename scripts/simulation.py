@@ -85,6 +85,8 @@ Ac_pk, Bc = Kinematic.getModel()  # get model parameters
 P, Ki, S= Kinematic.getMPCSet(Ac_pk,Bc) 
 # set initial variabel
 
+"""
+
 def openloop_control (data):
     
     # Construct Vector of Schedulling Variables
@@ -259,3 +261,5 @@ if __name__=='__main__':
 
 
 
+
+"""
