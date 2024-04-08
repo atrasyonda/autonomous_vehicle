@@ -164,11 +164,11 @@ class Kinematic:
         # print("Output Ki", outputKi)
 
         # INI MATRIX S DARI JURNAL REFERENSI
-        # S = np.array([
-        #     [0.465, 0, 0],
-        #     [0, 23.813, 76.596],
-        #     [0, 76.596, 257.251]
-        # ])  
+        S = np.array([
+            [0.465, 0, 0],
+            [0, 23.813, 76.596],
+            [0, 76.596, 257.251]
+        ])  
 
         print("S", S)
         eigenvalues = np.linalg.eigvals(P)

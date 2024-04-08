@@ -50,7 +50,7 @@ u_min = np.array([[x_dot_min], [psi_dot_min]])  # batas bawah input (X_dot dan P
 # u_min = [x_dot_min, psi_dot_min]
 
 delta_u_max = np.array([[a_max], [0.3]])  # batas atas perubahan input --> jurnal
-delta_u_min = np.array([[-a_min], [-0.3]])  # batas bawah perubahan input --> jurnal
+delta_u_min = np.array([[a_min], [-0.3]])  # batas bawah perubahan input --> jurnal
 
 # delta_u_max = [2, 0.3]
 # delta_u_min = [-2, -0.3]
