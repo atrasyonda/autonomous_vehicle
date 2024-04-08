@@ -120,14 +120,22 @@ if __name__=='__main__':
     # print("xr_dot : ", len(xr_dot))
     # print("psi_r_dot : ", len(psi_r_dot))
     # time.sleep(5)
+    iteration=[]
 
     car_pos_x = [] 
     car_pos_y= [] 
     car_psi = []
+    car_delta = []
+
+    car_x_dot = []
+    car_psi_dot = []
 
     ref_pos_x = []
     ref_pos_y = []
     ref_psi = []
+
+    ref_x_dot = []
+    ref_psi_dot = []
     for i in range(len(xr_dot)):
         print  ("%d th loop" %i)
         car = state()
@@ -137,21 +145,34 @@ if __name__=='__main__':
             Psi_k = 0
             x_dot = 0
             psi_dot = 0
+            delta_steer = 0
         else : 
             X_k = X_r[i] - next_state[0,0]
             Y_k = Y_r[i] - next_state[1,0]
             Psi_k = Psi_r[i] - next_state[2,0]
             x_dot = control_signal[0,0]
             psi_dot = control_signal[1,0]
+            print("=======================")
+            print("omega : ", control_signal[1,0])
+            delta_steer= np.arctan(control_signal[1,0]*(lf+lr)/control_signal[0,0])
+            print("delta : ", delta_steer)
+            print("=======================")
+
+        iteration.append(i)
 
         ref_pos_x.append(X_r[i])
         ref_pos_y.append(Y_r[i])
         ref_psi.append(Psi_r[i])
+        ref_x_dot.append(xr_dot[i][0])
+        ref_psi_dot.append(psi_r_dot[i][0])
 
         car_pos_x.append(X_k)
         car_pos_y.append(Y_k)
         car_psi.append(Psi_k)
+        car_delta.append(delta_steer)
 
+        car_x_dot.append(x_dot)
+        car_psi_dot.append(psi_dot)
 
         # === kinematic control =====
         car.x = X_r[i] - X_k
@@ -180,12 +201,19 @@ if __name__=='__main__':
     # print("X: ", car_pos_x)
     # print("Y: ", car_pos_y)
     # print("Angle : ", car_psi)
-    print("Dimensi X", len(car_pos_x))
-    print("Dimensi X_ref", len(ref_pos_x))
-    print("Dimensi Y", len(car_pos_y))
-    print("Dimensi Y_ref", len(ref_pos_y))
-    print("Dimensi Psi", len(car_psi))
-    print("Dimensi Psi_ref", len(ref_psi))
+    # print("Delta Steering : ", car_delta)
+
+    # print("Dimensi X", len(car_pos_x))
+    # print("Dimensi X_ref", len(ref_pos_x))
+    # print("Dimensi Y", len(car_pos_y))
+    # print("Dimensi Y_ref", len(ref_pos_y))
+    # print("Dimensi Psi", len(car_psi))
+    # print("Dimensi Psi_ref", len(ref_psi))
+
+    print("Dimensi X_dot", len(car_x_dot))
+    print("Dimensi X_dot_ref", len(xr_dot))
+    print("Dimensi Psi_dot", len(car_psi_dot))
+    print("Dimensi Psi_dot_ref", len(psi_r_dot))
 
     # ====== PLOT TRAJECTORY =====
     plt.plot(ref_pos_x,ref_pos_y,'b',linewidth=2,label='The trajectory')
@@ -197,6 +225,37 @@ if __name__=='__main__':
     plt.ylim(-ref_pos_x[-1]/2,ref_pos_x[-1]/2) # Scale roads (x & y sizes should be the same to get a realistic picture of the situation)
     plt.show()
 
+    # Membuat subplot pertama
+    plt.subplot(3, 1, 1)  # 2 baris, 1 kolom, subplot pertama
+    plt.title('Longitudinal Velocity')
+    plt.plot(iteration,ref_x_dot,'--r',linewidth=2,label='Setpoint')
+    plt.plot(iteration,car_x_dot,'b',linewidth=2,label='Car')
+    plt.xlabel('Iterasi')
+    plt.ylabel('Vx')
+    plt.legend()
+
+    # Membuat subplot kedua
+    plt.subplot(3, 1, 2)  # 2 baris, 1 kolom, subplot kedua
+    plt.title('Angular Velocity')
+    plt.plot(iteration,ref_psi_dot,'--r',linewidth=2,label='Setpoint')
+    plt.plot(iteration,car_psi_dot,'b',linewidth=2,label='Car')
+    plt.xlabel('Iterasi')
+    plt.ylabel('Omega')
+    plt.legend()
+
+    # Membuat subplot ketiga
+    plt.subplot(3, 1, 3)  # 2 baris, 1 kolom, subplot ketiga
+    plt.title('Steering Angle (Rad/s)')
+    plt.plot(iteration,car_delta,'b',linewidth=2,label='Car Steering')
+    plt.xlabel('Iterasi')
+    plt.ylabel('delta')
+    plt.legend()
+
+    # Menyesuaikan layout
+    plt.tight_layout()
+
+    # Menampilkan grafik
+    plt.show()
 
 
 

@@ -236,7 +236,13 @@ class Kinematic:
 
             u_opt = U_k_optimized[0]
             x_opt = Xk_optimized[1]
-            print("next_x_opt : ", x_opt[1])
+            # print("=======================")
+            # print("omega : ", u_opt[1])
+            # u_opt[1] = np.arctan(u_opt[1]*(lf+lr)/u_opt[0])
+            # print("delta : ", u_opt[1])
+            # print("=======================")
+            # print("next_x_opt : ", x_opt[1])
+
         else:
             print("Problem not solved")
             print("Status:", problem.status)
