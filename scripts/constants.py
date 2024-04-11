@@ -55,9 +55,11 @@ delta_u_min = np.array([[a_min], [-0.3]])  # batas bawah perubahan input --> jur
 # delta_u_max = [2, 0.3]
 # delta_u_min = [-2, -0.3]
 
-Q_k = np.diag([1,1,3])  # kinematic control state weight matrix --> JURNAL
-R_k = np.diag([1,3])  # kinematic control input weight matrix --> JURNAL
+Q_k =  0.9*np.diag([0.33, 0.33, 0.33]) # kinematic MPC state weight matrix --> JURNAL
+R_k =  0.1*np.diag([0.8, 0.2])# kinematic MPC input weight matrix --> JURNAL
 
+Q_ts = np.diag([1,1,3]) # LMI State Weight Matrix --> JURNAL
+R_ts = np.diag([1,3])  # LMI Input Weight Matrix --> JURNAL
 
 # Dynamic LPV-LQR Controller Design
 Q_d = 0.9*np.diag([0.66, 0.01, 0.33])  # dynamic control state weight matrix --> JURNAL

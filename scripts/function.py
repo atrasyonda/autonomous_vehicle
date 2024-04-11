@@ -88,12 +88,20 @@ class Kinematic:
         return Ac
     
     def getMPCSet(Ac_pk,Bc):
-        invQts= np.linalg.inv(Q_k)
-        invRts= np.linalg.inv(R_k)
+        invQts= np.linalg.inv(Q_ts)
+        invRts= np.linalg.inv(R_ts)
         Y = cp.Variable((n, n),symmetric=True)
+        # Y = cp.diag(cp.Variable(n))
+        print ("Y : ", Y.shape)
+
         W = [cp.Variable((m, n)) for _ in range(2**n)]
-        
-        constraints = [Y>>0]
+
+        constraints = [Y==Y.T, Y>>0]
+        # constraints += [cp.lambda_min(Y) >=0.1, cp.lambda_max(Y)<=0.5]
+        constraints += [cp.lambda_min(Y) >=0.1]
+        # constraints += [cp.lambda_sum_largest(Y, 3) <= 2]
+        # constraints += [cp.lambda_sum_smallest(Y, 3) >= 1.3]
+
         for i in range (2**n):
             lmi_prob = cp.vstack([
                 cp.hstack([Y, (Ac_pk[i] @ Y + Bc @ W[i]).T ,Y, W[i].T]), #baris 1
@@ -102,33 +110,38 @@ class Kinematic:
                 cp.hstack([W[i], np.zeros([2,3]), np.zeros([2,3]), invRts]) #baris 4
                 ])
             constraints += [lmi_prob>=(0.3*np.eye(11))] # lmi definit positif dgn batasan lebih spesifik agar nilai Y dan Wi tidak nol
+            # constraints += [lmi_prob >>0]
+
         obj = cp.Minimize(0)
         problem = cp.Problem(obj, constraints)
-        problem.solve(solver=cp.SCS, verbose = True)
+        problem.solve(solver=cp.SCS, verbose = False)
         if problem.status == cp.OPTIMAL:
-            # print("Optimal value", problem.value)
+            print("Optimal value", problem.value)
+            # print("lmi_prob : ", lmi_prob)
             # print("Y", Y.value)
             # print("W", [w.value for w in W])
             outputKi= np.zeros([8,2,3])
             y_opt = Y.value
+            print("Eigenvalue Y = ", np.linalg.eigvals(y_opt))
             P = np.linalg.inv(y_opt)
+            print("Y_inverse = ", P)
+            print("Eigenvalue Y_inverse = ", np.linalg.eigvals(P))
             for i in range(2**n):
                 outputKi[i]=W[i].value @ P
         else:
             print("Problem not solved")
             print("Status:", problem.status)
 
-        
+        print ("Ki[0] = ", outputKi[0])
         #================================================================================================
         
-        Z = cp.Variable((n, n), symmetric=True)
-        # u_bar= np.array([[1.4], [20]]) # matrix 2x1
+        Z = cp.Variable((n, n))
         u_bar = u_max
         u_bar_squared= u_bar@u_bar.T
-
         S= np.zeros([3,3])
-
         constraints2=[]
+        # constraints2 += [cp.lambda_min(Z) >=0.01, cp.lambda_max(Z)<=2]
+        constraints2 += [cp.lambda_sum_smallest(Z, 3) >= 0.1]
         for i in range (2**n):
             Ai = Ac_pk[i]
             Ki = outputKi[i]
@@ -138,23 +151,12 @@ class Kinematic:
                 ])
             constraints2 += [lmi_prob<<0]
             constraints2 += [Ki@Z@Ki.T-u_bar_squared<<0]
-            # lmi2.append(lmi_prob)
 
-        # print ("lmi2 ke 1", lmi2[0])
-        # constraints2 = [lmi2[0]<<0, 
-        #                 lmi2[1]<<0,
-        #                 lmi2[2]<<0,
-        #                 lmi2[3]<<0,
-        #                 lmi2[4]<<0,
-        #                 lmi2[5]<<0,
-        #                 lmi2[6]<<0,
-        #                 lmi2[7]<<0,
-        #                 Ki@Z@Ki.T-u_bar_squared<<0] 
         obj2 = cp.Maximize(0)
         problem2 = cp.Problem(obj2, constraints2)
         problem2.solve(solver=cp.SCS)
         if problem2.status == cp.OPTIMAL:
-            # print ("Z : ", Z.value)
+            print ("Z : ", Z.value)
             S=np.linalg.inv(Z.value)
         else:
             print("Problem not solved")
@@ -164,11 +166,11 @@ class Kinematic:
         # print("Output Ki", outputKi)
 
         # INI MATRIX S DARI JURNAL REFERENSI
-        S = np.array([
-            [0.465, 0, 0],
-            [0, 23.813, 76.596],
-            [0, 76.596, 257.251]
-        ])  
+        # S = np.array([
+        #     [0.465, 0, 0],
+        #     [0, 23.813, 76.596],
+        #     [0, 76.596, 257.251]
+        # ])  
 
         print("S", S)
         eigenvalues = np.linalg.eigvals(P)

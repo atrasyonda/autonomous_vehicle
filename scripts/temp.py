@@ -1,67 +1,50 @@
+import rospy
+import numpy as np
+import cvxpy as cp
 import matplotlib.pyplot as plt
 
-# Data untuk plot pertama
-x1 = [1, 2, 3, 4, 5]
-y1 = [2, 3, 5, 7, 11]
+from function import Kinematic
+from constants import *
 
-# Data untuk plot kedua
-x2 = [1, 2, 3, 4, 5]
-y2 = [1, 4, 9, 16, 25]
+Ac_pk, Bc = Kinematic.getModel()  # get model parameters
+# P, Ki, S= Kinematic.getMPCSet(Ac_pk,Bc) 
+# set initial variabel
 
-# Membuat subplot pertama
-plt.subplot(2, 1, 1)  # 2 baris, 1 kolom, subplot pertama
-plt.plot(x1, y1, color='blue', linestyle='-', marker='o', label='Plot 1')
-plt.xlabel('Nilai X')
-plt.ylabel('Nilai Y')
-plt.title('Plot 1')
-plt.legend()
+S = np.array([
+    [0.465, 0, 0],
+    [0, 23.813, 76.596],
+    [0, 76.596, 257.251]
+])  
 
-# Membuat subplot kedua
-plt.subplot(2, 1, 2)  # 2 baris, 1 kolom, subplot kedua
-plt.plot(x2, y2, color='red', linestyle='--', marker='x', label='Plot 2')
-plt.xlabel('Nilai X')
-plt.ylabel('Nilai Y')
-plt.title('Plot 2')
-plt.legend()
+Z = np.linalg.inv(S)
+print("Z : ", Z)
 
-# Menyesuaikan layout
-plt.tight_layout()
+outputKi = [cp.Variable((m, n)) for _ in range(2**n)]
 
-# Menampilkan grafik
-plt.show()
+u_bar = u_max
+u_bar_squared= u_bar@u_bar.T
+print("u_bar_squared : ", u_bar_squared)
+constraints2=[]
+for i in range (2**n):
+    Ai = Ac_pk[i]
+    Ki = outputKi[i]
+    lmi_prob = cp.vstack([
+        cp.hstack([-Z, Z@(Ai+Bc@Ki).T]), #baris 1
+        cp.hstack([(Ai+Bc@Ki)@Z, -Z]), #baris 2
+        ])
+    constraints2 += [lmi_prob<<0]
+    constraints2 += [(Ki@Z)@Ki.T<=u_bar_squared]
+    # constraints2 += [Ki@Z@Ki.T-u_bar_squared<<0]
+    # constraints2 += [cp.quad_form(Ki,Z)<=u_bar_squared]
 
-
-#  BUAT 6 PLOT DENGAN SUSUNAN 3 BARIS DAN 2 KOLOM
-# Plot 1
-plt.subplot(3, 2, 1)
-plt.title('Plot 1')
-plt.plot([1, 2, 3], [4, 5, 6])
-
-# Plot 2
-plt.subplot(3, 2, 2)
-plt.title('Plot 2')
-plt.plot([1, 2, 3], [7, 8, 9])
-
-# Plot 3
-plt.subplot(3, 2, 3)
-plt.title('Plot 3')
-plt.plot([1, 2, 3], [10, 11, 12])
-
-# Plot 4
-plt.subplot(3, 2, 4)
-plt.title('Plot 4')
-plt.plot([1, 2, 3], [13, 14, 15])
-
-# Plot 5
-plt.subplot(3, 2, 5)
-plt.title('Plot 5')
-plt.plot([1, 2, 3], [16, 17, 18])
-
-# Plot 6
-plt.subplot(3, 2, 6)
-plt.title('Plot 6')
-plt.plot([1, 2, 3], [19, 20, 21])
-
-plt.tight_layout()  # Membuat tata letak subplot menjadi lebih rapi
-
-plt.show()
+obj2 = cp.Maximize(0)
+problem2 = cp.Problem(obj2, constraints2)
+problem2.solve(solver=cp.SCS)
+if problem2.status == cp.OPTIMAL:
+    print("Optimal value", problem2.value)
+    Ki = np.zeros([8,2,3])
+    for i in range(2**n):
+        Ki[i] = outputKi[i]
+else:
+    print("Problem not solved")
+    print("Status:", problem2.status)
