@@ -90,18 +90,45 @@ class Kinematic:
     def getMPCSet(Ac_pk,Bc):
         invQts= np.linalg.inv(Q_ts)
         invRts= np.linalg.inv(R_ts)
-        Y = cp.Variable((n, n),symmetric=True)
-        # Y = cp.diag(cp.Variable(n))
-        print ("Y : ", Y.shape)
-
+        Y = cp.Variable((n, n))
         W = [cp.Variable((m, n)) for _ in range(2**n)]
+        
+        temp = np.concatenate((invQts, np.zeros([3,2])), axis=1)
+        temp2 = np.concatenate((np.zeros([2,3]), invRts), axis=1)
+        C = np.concatenate((temp, temp2), axis=0)
+        # print("C : ", C)
+        C_inverse = np.linalg.inv(C)
+        # eigenvalues = np.linalg.eigvals(C_inverse)
+        # if np.all(eigenvalues >= 0):
+        #     print("C_inverse adalah matriks positif semidefinit.")
+        # else:
+        #     print("C_inverse bukan matriks positif semidefinit.")
+
+
+
+
+        # A = cp.vstack([
+        #     cp.hstack([Y, (Ac_pk[0] @ Y + Bc @ W[0]).T]), #baris 1
+        #     cp.hstack([(Ac_pk[0] @ Y + Bc @ W[0]), Y]), #baris 2
+        #     ])
+
+        # B = cp.vstack([
+        #     cp.hstack([Y, W[0].T]), #baris 1
+        #     cp.hstack([np.zeros([3,3]), np.zeros([3,2])]), #baris 2
+        #     ])
+        # BT = cp.vstack([
+        #     cp.hstack([Y, np.zeros([3,3])]), #baris 1
+        #     cp.hstack([W[0], np.zeros([2,3])]), #baris 2
+        #     ])
+
+        # print("Dimensi A : ", A.shape)
+        # print("Dimensi B : ", B.shape)
+        # print("Dimensi C_inverse : ", C_inverse.shape)
+        # print("Dimensi BT : ", B.T.shape)
 
         constraints = [Y==Y.T, Y>>0]
-        # constraints += [cp.lambda_min(Y) >=0.1, cp.lambda_max(Y)<=0.5]
-        constraints += [cp.lambda_min(Y) >=0.1]
-        # constraints += [cp.lambda_sum_largest(Y, 3) <= 2]
-        # constraints += [cp.lambda_sum_smallest(Y, 3) >= 1.3]
-
+        # constraints = [cp.lambda_min(Y) >=0.1]
+        # print(0.3*np.eye(11))
         for i in range (2**n):
             lmi_prob = cp.vstack([
                 cp.hstack([Y, (Ac_pk[i] @ Y + Bc @ W[i]).T ,Y, W[i].T]), #baris 1
@@ -109,17 +136,52 @@ class Kinematic:
                 cp.hstack([Y, np.zeros([3,3]), invQts, np.zeros([3,2])]), #baris 3
                 cp.hstack([W[i], np.zeros([2,3]), np.zeros([2,3]), invRts]) #baris 4
                 ])
-            constraints += [lmi_prob>=(0.3*np.eye(11))] # lmi definit positif dgn batasan lebih spesifik agar nilai Y dan Wi tidak nol
-            # constraints += [lmi_prob >>0]
+            # constraints += [lmi_prob>>0]
+
+            constraints += [lmi_prob>=(0.1*np.eye(11))] # lmi definit positif dgn batasan lebih spesifik agar nilai Y dan Wi tidak nol
+            constraints += [Y >= 0.01*np.eye(3)]
+            constraints += [W[i]>= 0.01*np.ones([2,3])]
+
+
+            # Atemp = np.concatenate((Y, (Ac_pk[i] @ Y + Bc @ W[i]).T), axis=1)
+            # Atemp2 = np.concatenate((Ac_pk[i] @ Y + Bc @ W[i], Y), axis=1)
+            # C = np.concatenate((temp, temp2), axis=0)
+
+            # A =  cp.bmat([[Y, (Ac_pk[i] @ Y + Bc @ W[i]).T],
+            #              [(Ac_pk[i] @ Y + Bc @ W[i]), Y]
+            #         ])
+            # B =  cp.bmat([[Y, W[i].T],
+            #               [np.zeros([3,3]), np.zeros([3,2])]
+            #         ])
+            # print("Dimensi A : ", A.shape)
+            # print("Dimensi B : ", B.shape)
+            # print("Dimensi BT : ", B.T.shape)
+
+            # A = cp.vstack([
+            #     cp.hstack([Y, (Ac_pk[i] @ Y + Bc @ W[i]).T]), #baris 1
+            #     cp.hstack([(Ac_pk[i] @ Y + Bc @ W[i]), Y]), #baris 2
+            #     ])
+
+            # B = cp.vstack([
+            #     cp.hstack([Y, W[i].T]), #baris 1
+            #     cp.hstack([np.zeros([3,3]), np.zeros([3,2])]), #baris 2
+            #     ])
+            # BT = cp.vstack([
+            #     cp.hstack([Y, np.zeros([3,3])]), #baris 1
+            #     cp.hstack([W[i], np.zeros([2,3])]), #baris 2
+            #     ])
+            # constraints += [A>>0]
+            # constraints += [(A-(B@C_inverse)@BT)>>0]
+            
 
         obj = cp.Minimize(0)
         problem = cp.Problem(obj, constraints)
-        problem.solve(solver=cp.SCS, verbose = False)
+        problem.solve(solver=cp.SCS, verbose = False,max_iters=1000)
         if problem.status == cp.OPTIMAL:
             print("Optimal value", problem.value)
             # print("lmi_prob : ", lmi_prob)
             # print("Y", Y.value)
-            # print("W", [w.value for w in W])
+            print("W", [w.value for w in W])
             outputKi= np.zeros([8,2,3])
             y_opt = Y.value
             print("Eigenvalue Y = ", np.linalg.eigvals(y_opt))
@@ -132,16 +194,25 @@ class Kinematic:
             print("Problem not solved")
             print("Status:", problem.status)
 
-        print ("Ki[0] = ", outputKi[0])
+        # print ("Ki[0] = ", outputKi[0])
         #================================================================================================
         
         Z = cp.Variable((n, n))
         u_bar = u_max
         u_bar_squared= u_bar@u_bar.T
         S= np.zeros([3,3])
+
+        # inv_u_bar_squared = np.linalg.inv(u_bar_squared)
+        # print("inv_u_bar_squared : ", inv_u_bar_squared)
+        # eigenvalues = np.linalg.eigvals(inv_u_bar_squared)
+        # if np.all(eigenvalues >= 0):
+        #     print("inv_u_bar_squared adalah matriks positif semidefinit.")
+        # else:
+        #     print("inv_u_bar_squared bukan matriks positif semidefinit.")
+
         constraints2=[]
         # constraints2 += [cp.lambda_min(Z) >=0.01, cp.lambda_max(Z)<=2]
-        constraints2 += [cp.lambda_sum_smallest(Z, 3) >= 0.1]
+        # constraints2 += [cp.lambda_sum_smallest(Z, 3) >= 0.1]
         for i in range (2**n):
             Ai = Ac_pk[i]
             Ki = outputKi[i]
@@ -152,9 +223,15 @@ class Kinematic:
             constraints2 += [lmi_prob<<0]
             constraints2 += [Ki@Z@Ki.T-u_bar_squared<<0]
 
-        obj2 = cp.Maximize(0)
+            # lmi_prob2 = cp.vstack([
+            #     cp.hstack([Ki@Z@Ki.T, np.diag([1,1])]), #baris 1
+            #     cp.hstack([np.diag([1,1]), inv_u_bar_squared]), #baris 2
+            #     ])
+            # constraints2 += [lmi_prob2<<0]
+        # constraints2 += [cp.lambda_sum_largest(Z,4)]
+        obj2 = cp.Maximize(1)
         problem2 = cp.Problem(obj2, constraints2)
-        problem2.solve(solver=cp.SCS)
+        problem2.solve(solver=cp.SCS, verbose=False,max_iters=1000)
         if problem2.status == cp.OPTIMAL:
             print ("Z : ", Z.value)
             S=np.linalg.inv(Z.value)

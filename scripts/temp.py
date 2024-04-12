@@ -7,17 +7,26 @@ from function import Kinematic
 from constants import *
 
 Ac_pk, Bc = Kinematic.getModel()  # get model parameters
-# P, Ki, S= Kinematic.getMPCSet(Ac_pk,Bc) 
+P, Ki, S= Kinematic.getMPCSet(Ac_pk,Bc) 
 # set initial variabel
 
-S = np.array([
-    [0.465, 0, 0],
-    [0, 23.813, 76.596],
-    [0, 76.596, 257.251]
-])  
+# S = np.array([
+#     [0.465, 0, 0],
+#     [0, 23.813, 76.596],
+#     [0, 76.596, 257.251]
+# ])  
+# print("S : ", S)
 
 Z = np.linalg.inv(S)
 print("Z : ", Z)
+
+eigenvalue = np.linalg.eigvals(Z)
+
+print(eigenvalue)
+"""
+
+S = np.linalg.inv(Z)
+print("S : ", S)
 
 outputKi = [cp.Variable((m, n)) for _ in range(2**n)]
 
@@ -33,9 +42,11 @@ for i in range (2**n):
         cp.hstack([(Ai+Bc@Ki)@Z, -Z]), #baris 2
         ])
     constraints2 += [lmi_prob<<0]
-    constraints2 += [(Ki@Z)@Ki.T<=u_bar_squared]
-    # constraints2 += [Ki@Z@Ki.T-u_bar_squared<<0]
-    # constraints2 += [cp.quad_form(Ki,Z)<=u_bar_squared]
+    lmi_prob2 = cp.vstack([
+        cp.hstack([u_bar_squared, Ki]), #baris 1
+        cp.hstack([Ki.T, np.linalg.inv(Z)]), #baris 2
+        ])
+    constraints2 += [lmi_prob2>>0]
 
 obj2 = cp.Maximize(0)
 problem2 = cp.Problem(obj2, constraints2)
@@ -48,3 +59,4 @@ if problem2.status == cp.OPTIMAL:
 else:
     print("Problem not solved")
     print("Status:", problem2.status)
+"""
