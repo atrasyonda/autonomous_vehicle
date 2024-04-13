@@ -92,7 +92,7 @@ class Kinematic:
         invRts= np.linalg.inv(R_ts)
         Y = cp.Variable((n, n))
         W = [cp.Variable((m, n)) for _ in range(2**n)]
-        
+
         temp = np.concatenate((invQts, np.zeros([3,2])), axis=1)
         temp2 = np.concatenate((np.zeros([2,3]), invRts), axis=1)
         C = np.concatenate((temp, temp2), axis=0)
@@ -126,6 +126,7 @@ class Kinematic:
         # print("Dimensi C_inverse : ", C_inverse.shape)
         # print("Dimensi BT : ", B.T.shape)
 
+        constraints = []
         constraints = [Y==Y.T, Y>>0]
         # constraints = [cp.lambda_min(Y) >=0.1]
         # print(0.3*np.eye(11))
@@ -139,8 +140,9 @@ class Kinematic:
             # constraints += [lmi_prob>>0]
 
             constraints += [lmi_prob>=(0.1*np.eye(11))] # lmi definit positif dgn batasan lebih spesifik agar nilai Y dan Wi tidak nol
-            constraints += [Y >= 0.01*np.eye(3)]
-            constraints += [W[i]>= 0.01*np.ones([2,3])]
+            # constraints += [Y >>0]
+            # constraints += [Y >= 0.01*np.eye(3)]
+            # constraints += [W[i]>= 0.01*np.ones([2,3])]
 
 
             # Atemp = np.concatenate((Y, (Ac_pk[i] @ Y + Bc @ W[i]).T), axis=1)
@@ -163,20 +165,18 @@ class Kinematic:
             #     ])
 
             # B = cp.vstack([
-            #     cp.hstack([Y, W[i].T]), #baris 1
-            #     cp.hstack([np.zeros([3,3]), np.zeros([3,2])]), #baris 2
-            #     ])
-            # BT = cp.vstack([
             #     cp.hstack([Y, np.zeros([3,3])]), #baris 1
             #     cp.hstack([W[i], np.zeros([2,3])]), #baris 2
             #     ])
+            # constraints += [(A-(B.T@C_inverse)@B)>>0]
             # constraints += [A>>0]
-            # constraints += [(A-(B@C_inverse)@BT)>>0]
+            # constraints += [Ac_pk[i] @ Y + Bc @ W[i]>>0]
+            # constraints += [Y==Y.T, Y>>0]
             
 
         obj = cp.Minimize(0)
         problem = cp.Problem(obj, constraints)
-        problem.solve(solver=cp.SCS, verbose = False,max_iters=1000)
+        problem.solve(solver=cp.SCS, qcp=False, verbose = False,max_iters=1000)
         if problem.status == cp.OPTIMAL:
             print("Optimal value", problem.value)
             # print("lmi_prob : ", lmi_prob)
@@ -243,11 +243,11 @@ class Kinematic:
         # print("Output Ki", outputKi)
 
         # INI MATRIX S DARI JURNAL REFERENSI
-        # S = np.array([
-        #     [0.465, 0, 0],
-        #     [0, 23.813, 76.596],
-        #     [0, 76.596, 257.251]
-        # ])  
+        S = np.array([
+            [0.465, 0, 0],
+            [0, 23.813, 76.596],
+            [0, 76.596, 257.251]
+        ])  
 
         print("S", S)
         eigenvalues = np.linalg.eigvals(P)

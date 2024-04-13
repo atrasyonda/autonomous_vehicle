@@ -17,13 +17,19 @@ P, Ki, S= Kinematic.getMPCSet(Ac_pk,Bc)
 # ])  
 # print("S : ", S)
 
-Z = np.linalg.inv(S)
-print("Z : ", Z)
+# Z = np.linalg.inv(S)
+# print("Z : ", Z)
 
-eigenvalue = np.linalg.eigvals(Z)
+# eigenvalue = np.linalg.eigvals(Z)
 
-print(eigenvalue)
+# print(eigenvalue)
+
+# B1= np.zeros([3,3])
+# B2 = np.linalg.inv(B1)
+# print(B2)
+
 """
+
 
 S = np.linalg.inv(Z)
 print("S : ", S)

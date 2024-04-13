@@ -85,19 +85,8 @@ Ac_pk, Bc = Kinematic.getModel()  # get model parameters
 P, Ki, S= Kinematic.getMPCSet(Ac_pk,Bc) 
 # set initial variabel
 
-# S = np.array([
-#     [0.465, 0, 0],
-#     [0, 23.813, 76.596],
-#     [0, 76.596, 257.251]
-# ])  
-Z = np.linalg.inv(S)
-print ("==============")
-print("Z : ", Z)
-print("Eigenvalue Z : ", np.linalg.eigvals(Z))
-print("==============")
 
 
-"""
 def openloop_control (data):
     
     # Construct Vector of Schedulling Variables
@@ -270,7 +259,6 @@ if __name__=='__main__':
     # Menampilkan grafik
     plt.show()
 
-"""
 
 
 
