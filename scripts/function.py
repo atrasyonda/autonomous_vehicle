@@ -398,40 +398,60 @@ class Dynamic:
         for i in range(2**n):
             Ad+=(miu_vk[i]*Ad_vk[i])
             K_vk +=(miu_vk[i]*Ki[i])
-        print ("Ad : ", Ad)
-        print ("K_vk : ", K_vk)
+        # print ("Ad : ", Ad)
+        # print ("K_vk : ", K_vk)
         return Ad, K_vk
     
     def getLQR(Ad_vk,Bd): 
         invQts= np.linalg.inv(Q_d)
         invRts= np.linalg.inv(R_d)
-        Y = cp.Variable((n, n),symmetric=True)
-        Wi = cp.Variable((m, n)) # Solusi bobot untuk kontroler bds Ai --> nanti dibuat loop untuk dapat W0 - W7
-
-        Ki = np.zeros([2,3])
-        outputKi=np.zeros([8,2,3])
-
-        for i, element in enumerate(Ad_vk):
-            Ai = element
-            Z = Ai@Y+Bd@Wi
-            lmi = cp.vstack([
-                cp.hstack([Y, Z.T ,Y, Wi.T]), #baris 1
-                cp.hstack([Z, Y, np.zeros([3,3]), np.zeros([3,2])]), #baris 2
+        Y = cp.Variable((n, n),PSD=True)
+        W = [cp.Variable((m, n)) for _ in range(2**n)]
+        
+        constraints = [Y>>0]
+        for i in range (2**n):
+            lmi_prob = cp.vstack([
+                cp.hstack([Y, (Ad_vk[i] @ Y + Bd @ W[i]).T ,Y, W[i].T]), #baris 1
+                cp.hstack([(Ad_vk[i] @ Y + Bd @ W[i]), Y, np.zeros([3,3]), np.zeros([3,2])]), #baris 2
                 cp.hstack([Y, np.zeros([3,3]), invQts, np.zeros([3,2])]), #baris 3
-                cp.hstack([Wi, np.zeros([2,3]), np.zeros([2,3]), invRts]) #baris 4
+                cp.hstack([W[i], np.zeros([2,3]), np.zeros([2,3]), invRts]) #baris 4
                 ])
-            constraints = [lmi>=(0.3*np.eye(11)), Y>>0] # lmi definit positif dgn batasan lebih spesifik agar nilai Y dan Wi tidak nol
-            obj = cp.Minimize(0)
-            problem = cp.Problem(obj, constraints)
-            problem.solve(solver=cp.SCS)
-
-            if problem.status == cp.OPTIMAL:
-                Ki = Wi.value@np.linalg.inv(Y.value)
+            constraints += [lmi_prob>=(0.3*np.eye(11))] # lmi definit positif dgn batasan lebih spesifik agar nilai Y dan Wi tidak nol
+            # constraints += [lmi_prob>>0]       
+        obj = cp.Minimize(0)
+        problem = cp.Problem(obj, constraints)
+        problem.solve(solver=cp.SCS)
+        if problem.status == cp.OPTIMAL:
+            outputKi=np.zeros([8,2,3])
+            for i in range(2**n):
+                Ki = W[i].value @ np.linalg.inv(Y.value)
                 outputKi[i]=Ki
-            else:
-                print("Problem not solved")
-                print("Status:", problem.status)
-        # print ("Output Ki : ", outputKi)
+        else:
+            print("Problem not solved")
+            print("Status:", problem.status)
+
+
+        # for i, element in enumerate(Ad_vk):
+        #     Ai = element
+        #     Z = Ai@Y+Bd@Wi
+        #     lmi = cp.vstack([
+        #         cp.hstack([Y, Z.T ,Y, Wi.T]), #baris 1
+        #         cp.hstack([Z, Y, np.zeros([3,3]), np.zeros([3,2])]), #baris 2
+        #         cp.hstack([Y, np.zeros([3,3]), invQts, np.zeros([3,2])]), #baris 3
+        #         cp.hstack([Wi, np.zeros([2,3]), np.zeros([2,3]), invRts]) #baris 4
+        #         ])
+        #     constraints = [lmi>=(0.3*np.eye(11)), Y>>0] # lmi definit positif dgn batasan lebih spesifik agar nilai Y dan Wi tidak nol
+        #     obj = cp.Minimize(0)
+        #     problem = cp.Problem(obj, constraints)
+        #     problem.solve(solver=cp.SCS)
+
+        #     if problem.status == cp.OPTIMAL:
+        #         Ki = Wi.value@np.linalg.inv(Y.value)
+        #         outputKi[i]=Ki
+        #     else:
+        #         print("Problem not solved")
+        #         print("Status:", problem.status)
+
         return outputKi 
       
     def evaluateLQR(miu_vk,outputKi):
@@ -440,5 +460,6 @@ class Dynamic:
             K_vk +=(miu_vk[i]*outputKi[i])
         return K_vk
     
-    def calculate_new_states(Ad_vk, pk, X_k, Bd, U_k, Rc_k, i):
-        Ad = Dynamic.getLPV(pk[0], pk[1][i], pk[2], Ad_vk)
+    # def calculate_new_states(Ad_vk, K_vk):
+        
+        

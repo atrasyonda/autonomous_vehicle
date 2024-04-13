@@ -42,6 +42,7 @@ y_dot_max = 1       # batas atas kecepatan lateral (m/s)
 a_min = -2         # batas bawah percepatan (m/s^2)
 a_max = 2          # batas atas percepatan (m/s^2)
 
+
 # Kinematic LPV-MPC Controller Design
 u_max = np.array([[x_dot_max], [psi_dot_max]])  # batas atas input (X_dot dan Psi_dot) --> jurnal 
 u_min = np.array([[x_dot_min], [psi_dot_min]])  # batas bawah input (X_dot dan Psi_dot)--> jurnal
