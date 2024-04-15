@@ -102,13 +102,14 @@ class Kinematic:
                 cp.hstack([W[i], np.zeros([2,3]), np.zeros([2,3]), invRts]) #baris 4
                 ])
             constraints += [lmi_prob>=(0.3*np.eye(11))] # lmi definit positif dgn batasan lebih spesifik agar nilai Y dan Wi tidak nol
+            # constraints += [lmi_prob >>0]        
         obj = cp.Minimize(0)
         problem = cp.Problem(obj, constraints)
         problem.solve(solver=cp.SCS)
         if problem.status == cp.OPTIMAL:
             # print("Optimal value", problem.value)
-            # print("Y", Y.value)
-            # print("W", [w.value for w in W])
+            print("Y", Y.value)
+            print("W", [w.value for w in W])
             outputKi= np.zeros([8,2,3])
             y_opt = Y.value
             P = np.linalg.inv(y_opt)

@@ -95,7 +95,7 @@ P, Ki_k, S= Kinematic.getMPCSet(Ac_pk,Bc)
 
 Ad_vk, Bd = Dynamic.getModel()
 Ki_d = Dynamic.getLQR(Ad_vk, Bd)
-print ("Dynamic LMI Gain : ", Ki_d)
+# print ("Dynamic LMI Gain : ", Ki_d)
 
 def kinematic_control (data):
     # Construct Vector of Schedulling Variables
@@ -118,11 +118,25 @@ def kinematic_control (data):
 
 def dynamic_control (data):
     X_d = np.array([[data.x_dot], [data.y_dot],[data.psi_dot]])
+    X_e = setpoint_dynamic - X_d
+
     vk = [data.delta, data.x_dot, data.y_dot] 
     Ad, K_vk= Dynamic.LPV_LQR(vk, Ad_vk, Ki_d)
-    
     Ad_cl = Ad - Bd@K_vk
-    U_d = -K_vk @ X_d
+    
+    U_d = K_vk @ X_e
+
+    print("=====================================")
+    print("Error State : ", X_e)
+    print("Gain K_vk : ", K_vk)
+    print("=====================================")
+
+    # delta_car = np.arctan(U_k[1,0]*(lf+lr)/U_k[0,0]) + U_d[0,0]
+    # a = U_d[1,0]
+    # x_dot_car = U_k[0,0] + a*Td
+    # U_cd = [delta_car, x_dot_car]
+
+    # U_cd = U_d + U_k
     next_d_state = Ad_cl @ X_d + Bd @ U_d
 
 
@@ -162,7 +176,7 @@ if __name__=='__main__':
             X_k = 0
             Y_k = 0
             Psi_k = 0
-            x_dot = 0
+            x_dot = 0.1
             y_dot = 0
             psi_dot = 0
             delta_steer = 0
@@ -173,7 +187,7 @@ if __name__=='__main__':
             Psi_k = Psi_r[i] - next_k_state[2,0]
             # x_dot = next_U_k[0,0]
             # psi_dot = next_U_k[1,0]
-            x_dot = U_cd [0]
+            # x_dot = U_cd [0]
             psi_dot = x_dot*np.tan(U_cd[1])/(lf+lr)
 
             print("=======================")
@@ -218,43 +232,47 @@ if __name__=='__main__':
         # print("W omega : ", car.psi_dot_ref)
         # print("===========================")
         next_k_state, U_k = kinematic_control(car)
-        next_d_state, U_d = dynamic_control (car)
+        # next_d_state, U_d = dynamic_control (car)
 
-        delta_car = np.arctan(U_k[1,0]*(lf+lr)/U_k[0,0]) + U_d[0,0]
-        a = U_d[1,0]
-        x_dot_car = U_k[0,0] + a*Td
-        U_cd = [delta_car, x_dot_car]
+        setpoint_dynamic = np.array([[U_k[0,0]], [0], [U_k[1,0]]])
+        print("======= Ini Loop Dynamic ===========")
+        print("Setpoint Dynamic : ", setpoint_dynamic)
 
-        # print("===========================")
-        # print("U_k [0,0]: ", U_k[0,0])
-        # print("car.x.dot : ", x_dot_car)
+        # delta_car = np.arctan(U_k[1,0]*(lf+lr)/U_k[0,0]) + U_d[0,0]
+        # a = U_d[1,0]
+        # x_dot_car = U_k[0,0] + a*Td
+        # U_cd = [delta_car, x_dot_car]
 
-        for i in range(19):
-            psi_dot = np.tan(U_cd[0])*U_cd[1]/(lf+lr)
+
+        for i in range(5):
+            # psi_dot = np.tan(U_cd[0])*U_cd[1]/(lf+lr)
             print("===========================")
-            print("Angular Velocity", psi_dot)
-            print("Car linear velocity", x_dot ) #U_cd[1]
-            print("Car steering", x_dot) #U_cd[0]
-            print("===========================")
+            print("loop ke : ", i)
+            print("Linear velocity : ", x_dot ) #U_cd[1]
+            print("Angular Velocity : ", psi_dot)
             # car.x_dot = U_cd[1]
             car.x_dot = x_dot
             car.y_dot = y_dot
             car.psi_dot = psi_dot
             next_d_state, U_d =  dynamic_control (car)
-            # U_cd[0] += U_d[0,0]*Td
-            # U_cd[1] += U_d[1,0]
+
+            delta_steer = U_d[0,0]
+            a = U_d[1,0]
+            print("Steering Angle : ", delta_steer) #U_cd[0]
+            print("Acceleration : ", a)
+            print("===========================")
             x_dot = next_d_state[0,0]
             y_dot = next_d_state[1,0]
             psi_dot = next_d_state[2,0]
 
         print("======= Hasil Kinematic ==========")
-        print("Angular Velocity", U_k[1,0])
         print("Car linear velocity", U_k[0,0])
-        print("Car steering", delta_car)
+        print("Angular Velocity", U_k[1,0])
+        # print("Car steering", delta_car)
         print("======= Hasil Dinamic ==========")
+        print("Car linear velocity", x_dot)
         print("Angular Velocity", psi_dot)
-        print("Car linear velocity", U_cd[1])
-        print("Car steering", U_cd[0])
+        print("Car steering", delta_steer)
         print("===========================")
 
         # next_car_state = calculate_new_states()
