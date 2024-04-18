@@ -143,7 +143,7 @@ if __name__=='__main__':
         car = state()
         if i == 0 :
             X_k = 0
-            Y_k = 0
+            Y_k = -15
             Psi_k = 0
             x_dot = 0
             psi_dot = 0
