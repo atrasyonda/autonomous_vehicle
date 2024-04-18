@@ -6,8 +6,8 @@ from function import Kinematic
 
 Ac_pk, Bc = Kinematic.getModel()
 
-# print("Ac_pk : ", Ac_pk)
-print("Bc : ", Bc)
+print("Ac_pk : ", Ac_pk)
+# print("Bc : ", Bc)
 
 invQts= np.linalg.inv(Q_ts)
 invRts= np.linalg.inv(R_ts)

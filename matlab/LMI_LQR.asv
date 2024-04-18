@@ -17,8 +17,6 @@ setlmis([])
 
 [B_m, n, sB_m] = lmivar(3,[sY,zeros(3);sWi,zeros(2,3)]);
 
-% Perumusan persamaan LMI -->  L(X) < R(X)
-% +p : left side ; -p : right side , p adalah persamaan LMI ke-p
 lmiterm([-1 1 1 Y],1,1) % Y [1,1]
 lmiterm([-1 2 1 Y],A,1)
 lmiterm([-1 2 1 Wi],B,1) % AY + BWi [2,1]
@@ -31,7 +29,7 @@ lmiterm([-1 4 2 0],zeros(2,3)) % O 2x3 [4,2]
 lmiterm([-1 4 3 0],zeros(2,3)) % O 2x3 [4,3]
 lmiterm([-1 4 4 0],inv(R)) % inv(R)
 
-% lmiterm([1 0 0 0],0)
+lmiterm([1 0 0 0],0)
 
 LMIs = getlmis;
 
@@ -40,8 +38,8 @@ LMIs = getlmis;
 W_value = dec2mat(LMIs,xfeas,Wi)
 Y_value = dec2mat(LMIs, xfeas, Y)
 
-evalsys = evallmi(LMIs,xfeas);
-[lhs,rhs] = showlmi(evalsys,1)
+evalsys = evallmi(LMIs,)
+% [lhs,rhs] = showlmi()
 
 EigenvalueY = eig(Y_value);
 
