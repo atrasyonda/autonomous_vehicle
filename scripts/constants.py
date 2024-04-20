@@ -11,7 +11,17 @@ Td=0.01     # time sampling for dynamic control
 # ==================  CAR MODEL ========================= #
 # ==========  LPV-MPC for Autonomous Vehicle ============ #
 
+
+# ==================  CAR MODEL ========================= #
+# ==========  LPV-MPC for Autonomous Vehicle ============ #
+
 # car constants
+mass = 683       # massa mobil
+lf = 0.758    # panjang antara CoM dg roda depan (m)
+lr = 1.036    # panjang antara CoM dg roda belakang (m)
+I = 560.94      # momen inersia (kg.m^2)
+Caf = 24000 # koefisien kekakuan roda depan (N/rad)
+Car = 21000 # koefisien kekakuan roda belakang (N/rad)
 mass = 683       # massa mobil
 lf = 0.758    # panjang antara CoM dg roda depan (m)
 lr = 1.036    # panjang antara CoM dg roda belakang (m)
@@ -20,6 +30,10 @@ Caf = 24000 # koefisien kekakuan roda depan (N/rad)
 Car = 21000 # koefisien kekakuan roda belakang (N/rad)
 
 rho = 1.184 # densitas udara (kg/m^3)
+Cd = 0.36     # koefisien drag
+miu = 1   # koefisien gesekan
+Af = 1.91     # front sectional area of the vehicle (m^2)
+g = 9.8     # konstanta gravitasi (m/s^2)
 Cd = 0.36     # koefisien drag
 miu = 1   # koefisien gesekan
 Af = 1.91     # front sectional area of the vehicle (m^2)
@@ -52,17 +66,21 @@ u_min = np.array([[x_dot_min], [psi_dot_min]])  # batas bawah input (X_dot dan P
 
 delta_u_max = np.array([[a_max], [0.3]])  # batas atas perubahan input --> jurnal
 delta_u_min = np.array([[a_min], [-0.3]])  # batas bawah perubahan input --> jurnal
+delta_u_max = np.array([[a_max], [0.3]])  # batas atas perubahan input --> jurnal
+delta_u_min = np.array([[a_min], [-0.3]])  # batas bawah perubahan input --> jurnal
 
 # delta_u_max = [2, 0.3]
 # delta_u_min = [-2, -0.3]
 
-Q_k = np.diag([1,1,3])  # kinematic control state weight matrix --> JURNAL
-R_k = np.diag([1,3])  # kinematic control input weight matrix --> JURNAL
+Q_k =  0.9*np.diag([0.33, 0.33, 0.33]) # kinematic MPC state weight matrix --> JURNAL
+R_k =  0.1*np.diag([0.8, 0.2])# kinematic MPC input weight matrix --> JURNAL
 
+Q_ts = np.diag([1,1,3]) # LMI Kinematic State Weight Matrix --> JURNAL
+R_ts = np.diag([1,3])  # LMI Kinematic Input Weight Matrix --> JURNAL
 
 # Dynamic LPV-LQR Controller Design
-Q_d = 0.9*np.diag([0.66, 0.01, 0.33])  # dynamic control state weight matrix --> JURNAL
-R_d = 0.1*np.diag([0.5, 0.5])  # dynamic control input weight matrix --> JURNAL
+Q_d = 0.9*np.diag([0.66, 0.01, 0.33])  # LMI Dynamic State Weight Matrix --> JURNAL
+R_d = 0.1*np.diag([0.5, 0.5])  # LMI Dynamic Input Weight Matrix --> JURNAL
 
 # inisiasi state
 # psi_r_dot = 0
@@ -72,18 +90,3 @@ R_d = 0.1*np.diag([0.5, 0.5])  # dynamic control input weight matrix --> JURNAL
 # x_dot = 0
 # y_dot = 0
 # delta = 0
-
-"""
-================  CEK EIGEN VALUE MATRIKS BOBOT =================
-eigenvalues = np.linalg.eigvals(Q_k)
-if np.all(eigenvalues >= 0):
-    print("Q_k adalah matriks positif semidefinit.")
-else:
-    print("Q_k bukan matriks positif semidefinit.")
-
-eigenvalues = np.linalg.eigvals(R_k)
-if np.all(eigenvalues >= 0):
-    print("R_k adalah matriks positif semidefinit.")
-else:
-    print("R_k bukan matriks positif semidefinit.")
-"""

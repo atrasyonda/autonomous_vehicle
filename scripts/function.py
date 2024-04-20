@@ -126,7 +126,6 @@ class Kinematic:
         # u_bar= np.array([[1.4], [20]]) # matrix 2x1
         u_bar = u_max
         u_bar_squared= u_bar@u_bar.T
-
         S= np.zeros([3,3])
 
         constraints2=[]
@@ -139,21 +138,9 @@ class Kinematic:
                 ])
             constraints2 += [lmi_prob<<0]
             constraints2 += [Ki@Z@Ki.T-u_bar_squared<<0]
-            # lmi2.append(lmi_prob)
-
-        # print ("lmi2 ke 1", lmi2[0])
-        # constraints2 = [lmi2[0]<<0, 
-        #                 lmi2[1]<<0,
-        #                 lmi2[2]<<0,
-        #                 lmi2[3]<<0,
-        #                 lmi2[4]<<0,
-        #                 lmi2[5]<<0,
-        #                 lmi2[6]<<0,
-        #                 lmi2[7]<<0,
-        #                 Ki@Z@Ki.T-u_bar_squared<<0] 
-        obj2 = cp.Maximize(0)
+        obj2 = cp.Maximize(1)
         problem2 = cp.Problem(obj2, constraints2)
-        problem2.solve(solver=cp.SCS)
+        problem2.solve(solver=cp.SCS, verbose=False,max_iters=1000)
         if problem2.status == cp.OPTIMAL:
             # print ("Z : ", Z.value)
             S=np.linalg.inv(Z.value)
@@ -161,16 +148,26 @@ class Kinematic:
             print("Problem not solved")
             print("Status:", problem2.status)
             
-        # print("Output P", P)
         # print("Output Ki", outputKi)
 
         # INI MATRIX S DARI JURNAL REFERENSI
-        S = np.array([
-            [0.465, 0, 0],
-            [0, 23.813, 76.596],
-            [0, 76.596, 257.251]
-        ])  
+        # S = np.array([
+        #     [0.465, 0, 0],
+        #     [0, 23.813, 76.596],
+        #     [0, 76.596, 257.251]
+        # ])  
 
+        # INI MATRIX DARI HITUNGAN MATLAB
+        P = 10000*np.array([[0.8025, -0.1495, -0.5527],
+              [-0.1495, 0.3212, 0.8725],
+              [-0.5527, 0.8725, 3.2362]])
+
+        S = np.array([[0.0194, -0.0008, -0.0029],
+                    [-0.0008, 0.0070, 0.0100],
+                    [-0.0029, 0.0100, 0.0369]])
+
+
+        print("P", P)
         print("S", S)
         eigenvalues = np.linalg.eigvals(P)
         if np.all(eigenvalues >= 0):
@@ -237,6 +234,13 @@ class Kinematic:
             # x_opt = Xk_optimized[20]
 
             print("next_x_opt : ", x_opt[1])
+            # print("=======================")
+            # print("omega : ", u_opt[1])
+            # u_opt[1] = np.arctan(u_opt[1]*(lf+lr)/u_opt[0])
+            # print("delta : ", u_opt[1])
+            # print("=======================")
+            # print("next_x_opt : ", x_opt[1])
+
         else:
             print("Problem not solved")
             print("Status:", problem.status)
