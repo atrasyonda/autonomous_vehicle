@@ -2,6 +2,7 @@ close all
 clear
 clc
 
+%======= INI PERUMUSAN LMI UNTUK KINEMATIC CONTROLLER ======
 A1 = [1 -0.142 0;0.142 1 0.00999583; 0 0 1]; % Ac_pk[0]
 A2 = [1 -0.142 0; 0.142 1 0.00999583; 0 0 1];
 A3 = [1 -0.142 0; 0.142 1 1.99916677; 0 0 1];

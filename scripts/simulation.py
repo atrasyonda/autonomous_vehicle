@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import random
 # from geometry_msgs.msg import Twist
 from autonomous_vehicle.msg import state
-from function import Kinematic
+from function import Kinematic,Dynamic
 from constants import *
 
 import time
@@ -84,13 +84,16 @@ def path_generator():
 Ac_pk, Bc = Kinematic.getModel()  # get model parameters
 P, Ki, S= Kinematic.getMPCSet(Ac_pk,Bc) 
 
+Ad_vk, Bd = Dynamic.getModel()
+Kd = Dynamic.getLQR(Ad_vk, Bd)
+print("Kd : ", Kd)
 # set initial variabel
-
 
 def openloop_control (data):
     
     # Construct Vector of Schedulling Variables
-    pk = [data.psi_dot, data.x_dot_ref, data.psi]
+
+    # pk = [data.psi_dot, data.x_dot_ref, data.psi]
 
     # Construct the State-Space model
     X_k = np.array([[data.x], [data.y], [data.psi]])  # get current error state 

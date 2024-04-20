@@ -1,68 +1,41 @@
-import rospy
 import numpy as np
-import cvxpy as cp
-import matplotlib.pyplot as plt
 
-from function import Kinematic
-from constants import *
+data = [[[ 1.99994040e-02, -8.69355054e-01, -6.68971131e-01],
+         [ 0.00000000e+00, -5.47934087e+00,  6.03618627e-01],
+         [ 0.00000000e+00,  7.36183054e-01,  2.63624689e+00]],
 
-Ac_pk, Bc = Kinematic.getModel()  # get model parameters
-P, Ki, S= Kinematic.getMPCSet(Ac_pk,Bc) 
-# set initial variabel
+        [[ 1.99994040e-02, -8.69355054e-01, -6.48971131e-01],
+         [ 0.00000000e+00, -5.47934087e+00,  6.03618627e-01],
+         [ 0.00000000e+00,  7.36183054e-01,  2.63624689e+00]],
 
-# S = np.array([
-#     [0.465, 0, 0],
-#     [0, 23.813, 76.596],
-#     [0, 76.596, 257.251]
-# ])  
-# print("S : ", S)
+        [[ 9.94980803e-01, -4.34677527e-03, -1.32948557e-02],
+         [ 0.00000000e+00,  9.67603296e-01, -1.96976907e-01],
+         [ 0.00000000e+00,  3.68091527e-03,  1.00818123e+00]],
 
-# Z = np.linalg.inv(S)
-# print("Z : ", Z)
+        [[ 9.94980803e-01, -4.34677527e-03,  6.70514434e-03],
+         [ 0.00000000e+00,  9.67603296e-01, -1.96976907e-01],
+         [ 0.00000000e+00,  3.68091527e-03,  1.00818123e+00]],
 
-# eigenvalue = np.linalg.eigvals(Z)
+        [[ 1.99994040e-02,  8.69355054e-01,  6.48971131e-01],
+         [ 0.00000000e+00, -5.47934087e+00,  6.03618627e-01],
+         [ 0.00000000e+00,  7.36183054e-01,  2.63624689e+00]],
 
-# print(eigenvalue)
+        [[ 1.99994040e-02,  8.69355054e-01,  6.68971131e-01],
+         [ 0.00000000e+00, -5.47934087e+00,  6.03618627e-01],
+         [ 0.00000000e+00,  7.36183054e-01,  2.63624689e+00]],
 
-# B1= np.zeros([3,3])
-# B2 = np.linalg.inv(B1)
-# print(B2)
+        [[ 9.94980803e-01,  4.34677527e-03, -6.70514434e-03],
+         [ 0.00000000e+00,  9.67603296e-01, -1.96976907e-01],
+         [ 0.00000000e+00,  3.68091527e-03,  1.00818123e+00]],
 
-"""
+        [[ 9.94980803e-01,  4.34677527e-03,  1.32948557e-02],
+         [ 0.00000000e+00,  9.67603296e-01, -1.96976907e-01],
+         [ 0.00000000e+00,  3.68091527e-03,  1.00818123e+00]]]
 
+# Konversi ke numpy array
+data_np = np.array(data)
 
-S = np.linalg.inv(Z)
-print("S : ", S)
+# Bulatkan dengan ketelitian 0.0001
+rounded_data = np.round(data_np, decimals=3)
 
-outputKi = [cp.Variable((m, n)) for _ in range(2**n)]
-
-u_bar = u_max
-u_bar_squared= u_bar@u_bar.T
-print("u_bar_squared : ", u_bar_squared)
-constraints2=[]
-for i in range (2**n):
-    Ai = Ac_pk[i]
-    Ki = outputKi[i]
-    lmi_prob = cp.vstack([
-        cp.hstack([-Z, Z@(Ai+Bc@Ki).T]), #baris 1
-        cp.hstack([(Ai+Bc@Ki)@Z, -Z]), #baris 2
-        ])
-    constraints2 += [lmi_prob<<0]
-    lmi_prob2 = cp.vstack([
-        cp.hstack([u_bar_squared, Ki]), #baris 1
-        cp.hstack([Ki.T, np.linalg.inv(Z)]), #baris 2
-        ])
-    constraints2 += [lmi_prob2>>0]
-
-obj2 = cp.Maximize(0)
-problem2 = cp.Problem(obj2, constraints2)
-problem2.solve(solver=cp.SCS)
-if problem2.status == cp.OPTIMAL:
-    print("Optimal value", problem2.value)
-    Ki = np.zeros([8,2,3])
-    for i in range(2**n):
-        Ki[i] = outputKi[i]
-else:
-    print("Problem not solved")
-    print("Status:", problem2.status)
-"""
+print(rounded_data)
