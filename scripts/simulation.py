@@ -83,8 +83,8 @@ def path_generator():
 
 Ac_pk, Bc = Kinematic.getModel()  # get model parameters
 P, Ki, S= Kinematic.getMPCSet(Ac_pk,Bc) 
-# set initial variabel
 
+# set initial variabel
 
 
 def openloop_control (data):
@@ -142,8 +142,8 @@ if __name__=='__main__':
         print  ("%d th loop" %i)
         car = state()
         if i == 0 :
-            X_k = 0
-            Y_k = -15
+            X_k = X_r[0]
+            Y_k = Y_r[0]
             Psi_k = 0
             x_dot = 0
             psi_dot = 0
@@ -218,6 +218,7 @@ if __name__=='__main__':
     print("Dimensi Psi_dot_ref", len(psi_r_dot))
 
     # ====== PLOT TRAJECTORY =====
+    plt.title('Path Tracking Simulation')
     plt.plot(ref_pos_x,ref_pos_y,'b',linewidth=2,label='The trajectory')
     plt.plot(car_pos_x,car_pos_y,'--r',linewidth=2,label='Car position')
     plt.xlabel('x-position [m]',fontsize=15)
@@ -228,7 +229,7 @@ if __name__=='__main__':
     plt.show()
 
     # Membuat subplot pertama
-    plt.subplot(3, 1, 1)  # 2 baris, 1 kolom, subplot pertama
+    plt.subplot(2, 1, 1)  # 2 baris, 1 kolom, subplot pertama
     plt.title('Longitudinal Velocity')
     plt.plot(iteration,ref_x_dot,'--r',linewidth=2,label='Setpoint')
     plt.plot(iteration,car_x_dot,'b',linewidth=2,label='Car')
@@ -237,7 +238,7 @@ if __name__=='__main__':
     plt.legend()
 
     # Membuat subplot kedua
-    plt.subplot(3, 1, 2)  # 2 baris, 1 kolom, subplot kedua
+    plt.subplot(2, 1, 2)  # 2 baris, 1 kolom, subplot kedua
     plt.title('Angular Velocity')
     plt.plot(iteration,ref_psi_dot,'--r',linewidth=2,label='Setpoint')
     plt.plot(iteration,car_psi_dot,'b',linewidth=2,label='Car')
@@ -246,19 +247,15 @@ if __name__=='__main__':
     plt.legend()
 
     # Membuat subplot ketiga
-    plt.subplot(3, 1, 3)  # 2 baris, 1 kolom, subplot ketiga
-    plt.title('Steering Angle (Rad/s)')
-    plt.plot(iteration,car_delta,'b',linewidth=2,label='Car Steering')
-    plt.xlabel('Iterasi')
-    plt.ylabel('delta')
-    plt.legend()
+    # plt.subplot(3, 1, 3)  # 2 baris, 1 kolom, subplot ketiga
+    # plt.title('Steering Angle (Rad/s)')
+    # plt.plot(iteration,car_delta,'b',linewidth=2,label='Car Steering')
+    # plt.xlabel('Iterasi')
+    # plt.ylabel('delta')
+    # plt.legend()
 
     # Menyesuaikan layout
     plt.tight_layout()
 
     # Menampilkan grafik
     plt.show()
-
-
-
-

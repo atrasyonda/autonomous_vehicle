@@ -96,40 +96,9 @@ class Kinematic:
         temp = np.concatenate((invQts, np.zeros([3,2])), axis=1)
         temp2 = np.concatenate((np.zeros([2,3]), invRts), axis=1)
         C = np.concatenate((temp, temp2), axis=0)
-        # print("C : ", C)
         C_inverse = np.linalg.inv(C)
-        # eigenvalues = np.linalg.eigvals(C_inverse)
-        # if np.all(eigenvalues >= 0):
-        #     print("C_inverse adalah matriks positif semidefinit.")
-        # else:
-        #     print("C_inverse bukan matriks positif semidefinit.")
-
-
-
-
-        # A = cp.vstack([
-        #     cp.hstack([Y, (Ac_pk[0] @ Y + Bc @ W[0]).T]), #baris 1
-        #     cp.hstack([(Ac_pk[0] @ Y + Bc @ W[0]), Y]), #baris 2
-        #     ])
-
-        # B = cp.vstack([
-        #     cp.hstack([Y, W[0].T]), #baris 1
-        #     cp.hstack([np.zeros([3,3]), np.zeros([3,2])]), #baris 2
-        #     ])
-        # BT = cp.vstack([
-        #     cp.hstack([Y, np.zeros([3,3])]), #baris 1
-        #     cp.hstack([W[0], np.zeros([2,3])]), #baris 2
-        #     ])
-
-        # print("Dimensi A : ", A.shape)
-        # print("Dimensi B : ", B.shape)
-        # print("Dimensi C_inverse : ", C_inverse.shape)
-        # print("Dimensi BT : ", B.T.shape)
-
         constraints = []
         constraints = [Y==Y.T, Y>>0]
-        # constraints = [cp.lambda_min(Y) >=0.1]
-        # print(0.3*np.eye(11))
         for i in range (2**n):
             lmi_prob = cp.vstack([
                 cp.hstack([Y, (Ac_pk[i] @ Y + Bc @ W[i]).T ,Y, W[i].T]), #baris 1
@@ -137,43 +106,7 @@ class Kinematic:
                 cp.hstack([Y, np.zeros([3,3]), invQts, np.zeros([3,2])]), #baris 3
                 cp.hstack([W[i], np.zeros([2,3]), np.zeros([2,3]), invRts]) #baris 4
                 ])
-            # constraints += [lmi_prob>>0]
-
             constraints += [lmi_prob>=(0.1*np.eye(11))] # lmi definit positif dgn batasan lebih spesifik agar nilai Y dan Wi tidak nol
-            # constraints += [Y >>0]
-            # constraints += [Y >= 0.01*np.eye(3)]
-            # constraints += [W[i]>= 0.01*np.ones([2,3])]
-
-
-            # Atemp = np.concatenate((Y, (Ac_pk[i] @ Y + Bc @ W[i]).T), axis=1)
-            # Atemp2 = np.concatenate((Ac_pk[i] @ Y + Bc @ W[i], Y), axis=1)
-            # C = np.concatenate((temp, temp2), axis=0)
-
-            # A =  cp.bmat([[Y, (Ac_pk[i] @ Y + Bc @ W[i]).T],
-            #              [(Ac_pk[i] @ Y + Bc @ W[i]), Y]
-            #         ])
-            # B =  cp.bmat([[Y, W[i].T],
-            #               [np.zeros([3,3]), np.zeros([3,2])]
-            #         ])
-            # print("Dimensi A : ", A.shape)
-            # print("Dimensi B : ", B.shape)
-            # print("Dimensi BT : ", B.T.shape)
-
-            # A = cp.vstack([
-            #     cp.hstack([Y, (Ac_pk[i] @ Y + Bc @ W[i]).T]), #baris 1
-            #     cp.hstack([(Ac_pk[i] @ Y + Bc @ W[i]), Y]), #baris 2
-            #     ])
-
-            # B = cp.vstack([
-            #     cp.hstack([Y, np.zeros([3,3])]), #baris 1
-            #     cp.hstack([W[i], np.zeros([2,3])]), #baris 2
-            #     ])
-            # constraints += [(A-(B.T@C_inverse)@B)>>0]
-            # constraints += [A>>0]
-            # constraints += [Ac_pk[i] @ Y + Bc @ W[i]>>0]
-            # constraints += [Y==Y.T, Y>>0]
-            
-
         obj = cp.Minimize(0)
         problem = cp.Problem(obj, constraints)
         problem.solve(solver=cp.SCS, qcp=False, verbose = False,max_iters=1000)
@@ -194,25 +127,11 @@ class Kinematic:
             print("Problem not solved")
             print("Status:", problem.status)
 
-        # print ("Ki[0] = ", outputKi[0])
-        #================================================================================================
-        
         Z = cp.Variable((n, n))
         u_bar = u_max
         u_bar_squared= u_bar@u_bar.T
         S= np.zeros([3,3])
-
-        # inv_u_bar_squared = np.linalg.inv(u_bar_squared)
-        # print("inv_u_bar_squared : ", inv_u_bar_squared)
-        # eigenvalues = np.linalg.eigvals(inv_u_bar_squared)
-        # if np.all(eigenvalues >= 0):
-        #     print("inv_u_bar_squared adalah matriks positif semidefinit.")
-        # else:
-        #     print("inv_u_bar_squared bukan matriks positif semidefinit.")
-
         constraints2=[]
-        # constraints2 += [cp.lambda_min(Z) >=0.01, cp.lambda_max(Z)<=2]
-        # constraints2 += [cp.lambda_sum_smallest(Z, 3) >= 0.1]
         for i in range (2**n):
             Ai = Ac_pk[i]
             Ki = outputKi[i]
@@ -222,13 +141,6 @@ class Kinematic:
                 ])
             constraints2 += [lmi_prob<<0]
             constraints2 += [Ki@Z@Ki.T-u_bar_squared<<0]
-
-            # lmi_prob2 = cp.vstack([
-            #     cp.hstack([Ki@Z@Ki.T, np.diag([1,1])]), #baris 1
-            #     cp.hstack([np.diag([1,1]), inv_u_bar_squared]), #baris 2
-            #     ])
-            # constraints2 += [lmi_prob2<<0]
-        # constraints2 += [cp.lambda_sum_largest(Z,4)]
         obj2 = cp.Maximize(1)
         problem2 = cp.Problem(obj2, constraints2)
         problem2.solve(solver=cp.SCS, verbose=False,max_iters=1000)
@@ -239,16 +151,26 @@ class Kinematic:
             print("Problem not solved")
             print("Status:", problem2.status)
             
-        # print("Output P", P)
         # print("Output Ki", outputKi)
 
         # INI MATRIX S DARI JURNAL REFERENSI
-        S = np.array([
-            [0.465, 0, 0],
-            [0, 23.813, 76.596],
-            [0, 76.596, 257.251]
-        ])  
+        # S = np.array([
+        #     [0.465, 0, 0],
+        #     [0, 23.813, 76.596],
+        #     [0, 76.596, 257.251]
+        # ])  
 
+        # INI MATRIX DARI HITUNGAN MATLAB
+        P = 10000*np.array([[0.8025, -0.1495, -0.5527],
+              [-0.1495, 0.3212, 0.8725],
+              [-0.5527, 0.8725, 3.2362]])
+
+        S = np.array([[0.0194, -0.0008, -0.0029],
+                    [-0.0008, 0.0070, 0.0100],
+                    [-0.0029, 0.0100, 0.0369]])
+
+
+        print("P", P)
         print("S", S)
         eigenvalues = np.linalg.eigvals(P)
         if np.all(eigenvalues >= 0):

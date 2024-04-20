@@ -28,7 +28,6 @@ setlmis([])
 
 % [B_m, n, sB_m] = lmivar(3,[sY,zeros(3);sWi,zeros(2,3)]);
 for i = 1:8
-    Mi = newlmi
     lmiterm([-1 1 1 Y],1,1) % Y [1,1]
     lmiterm([-1 2 1 Y],A_pk{i},1)
     lmiterm([-1 2 1 Wi],B,1) % AY + BWi [2,1]

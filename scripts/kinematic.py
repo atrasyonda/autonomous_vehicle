@@ -38,8 +38,8 @@ def callback(data):
     print("=====================================")
     print("next_state : ", next_state)
     print("control_signal : ", control_signal)
-    pub.publish(state(x = next_state[0,0], y = next_state[1,0], psi = next_state[2,0], 
-                      x_dot = control_signal[0,0], psi_dot = control_signal[0,0]))
+    # pub.publish(state(x = next_state[0,0], y = next_state[1,0], psi = next_state[2,0], 
+    #                   x_dot = control_signal[0,0], psi_dot = control_signal[0,0]))
 
 
 
@@ -47,7 +47,7 @@ if __name__=='__main__':
     rospy.init_node("kinematic_node")
     rospy.loginfo("Node has been started")
     k_state = rospy.Subscriber("/car/state", state, callback)
-    pub = rospy.Publisher("/car/next_state", state, queue_size=10 )
+    # pub = rospy.Publisher("/car/next_state", state, queue_size=10 )
     rate = rospy.Rate(1)
     while not rospy.is_shutdown():
         rate.sleep()

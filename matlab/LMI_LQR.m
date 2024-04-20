@@ -15,8 +15,6 @@ setlmis([])
 [Y,n,sY] = lmivar(1,[3 1]);
 [Wi,n,sWi] = lmivar(2,[2 3]);
 
-[B_m, n, sB_m] = lmivar(3,[sY,zeros(3);sWi,zeros(2,3)]);
-
 % Perumusan persamaan LMI -->  L(X) < R(X)
 % +p : left side ; -p : right side , p adalah persamaan LMI ke-p
 lmiterm([-1 1 1 Y],1,1) % Y [1,1]
@@ -46,3 +44,5 @@ evalsys = evallmi(LMIs,xfeas);
 EigenvalueY = eig(Y_value);
 
 Ki = W_value*inv(Y_value);
+
+% lmiinfo(LMIs)
