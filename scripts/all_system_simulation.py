@@ -90,12 +90,37 @@ def path_generator():
 
 
 Ac_pk, Bc = Kinematic.getModel()  # get model parameters
-P, Ki_k, S= Kinematic.getMPCSet(Ac_pk,Bc) 
-# set initial variabel
-
 Ad_vk, Bd = Dynamic.getModel()
-Ki_d = Dynamic.getLQR(Ad_vk, Bd)
-# print ("Dynamic LMI Gain : ", Ki_d)
+# P, Ki_k, S= Kinematic.getMPCSet(Ac_pk,Bc) 
+# Ki_d = Dynamic.getLQR(Ad_vk, Bd)
+
+#==== INI MATRIX DARI HITUNGAN MATLAB =======
+# Kinematic MPC Set
+P = 10000*np.array([[0.8025, -0.1495, -0.5527],
+        [-0.1495, 0.3212, 0.8725],
+        [-0.5527, 0.8725, 3.2362]])
+S = np.array([[0.0194, -0.0008, -0.0029],
+            [-0.0008, 0.0070, 0.0100],
+            [-0.0029, 0.0100, 0.0369]])
+# Dynamic LQR Gain
+K1 = np.array([[0., 10.1605, -3.6332],
+               [-0.0652, -102.0535, -36.6814]])
+K2 = np.array([[0., 10.1604, -3.6329],
+               [-0.0652, -101.0677, -36.3028]])
+K3 = np.array([[0., -2.0465, -0.5647],
+               [-3.2295, -0.2165, 0.0104]])
+K4 = np.array([[0., -2.0465, -0.5647],
+               [-3.2295, 0.2165, -0.0104]])
+K5 = np.array([[0., 10.1604, -3.6329],
+               [-0.0652, 101.0677, 36.3028]])
+K6 = np.array([[0., 10.1605, -3.6332],
+               [-0.0652, 102.0535, 36.6814]])
+K7 = np.array([[0., -2.0465, -0.5647],
+               [-3.2295, -0.2165, 0.0104]])
+K8 = np.array([[0., -2.0465, -0.5647],
+               [-3.2295, 0.2165, -0.0104]])
+Ki_d = [K1, K2, K3, K4, K5, K6, K7, K8]
+# set initial variabel
 
 def kinematic_control (data):
     # Construct Vector of Schedulling Variables
@@ -119,50 +144,21 @@ def kinematic_control (data):
 def dynamic_control (data):
     X_d = np.array([[data.x_dot], [data.y_dot],[data.psi_dot]])
     X_e = setpoint_dynamic - X_d
-
     vk = [data.delta, data.x_dot, data.y_dot] 
     Ad, K_vk= Dynamic.LPV_LQR(vk, Ad_vk, Ki_d)
     Ad_cl = Ad - Bd@K_vk
-    
     U_d = K_vk @ X_e
-
     print("=====================================")
     print("Error State : ", X_e)
     print("Gain K_vk : ", K_vk)
     print("=====================================")
-
-    # delta_car = np.arctan(U_k[1,0]*(lf+lr)/U_k[0,0]) + U_d[0,0]
-    # a = U_d[1,0]
-    # x_dot_car = U_k[0,0] + a*Td
-    # U_cd = [delta_car, x_dot_car]
-
-    # U_cd = U_d + U_k
     next_d_state = Ad_cl @ X_d + Bd @ U_d
-
-
-
     # print("=====================================")
     # print("LQR Gain : ", K_vk)
     print("U_d : ", U_d)
     # print("=====================================")
 
     return next_d_state, U_d
-
-def calculate_new_states():
-    # ======= Calculate next state ========
-    # input delta steering and Vx
-
-    # Fyf = (Caf*(delta_steer - y_dot/x_dot - lf*psi_dot/x_dot))
-    # Fyr = (Car*(-y_dot/x_dot + lr*psi_dot/x_dot))
-    # Vx_next = a - Fyf*np.sin(delta_steer)/m - (0.5*Cd*rho*Af*x_dot**2 + miu*m*g)/m + psi_dot*y_dot
-    # Vy_next = Fyf*np.cos(delta_steer)/m + Fyr/m - psi_dot*x_dot
-    # Psi_dot_next = (Fyf*lf*np.cos(delta_steer) - Fyr*lr)/I 
-
-    # Xe_next = psi_dot*Y_k + xr_dot[i][0]*np.cos(Psi_k) - x_dot
-    # Ye_next = -psi_dot*X_k + xr_dot[i][0]*np.sin(Psi_k)
-    # Psi_next = psi_dot - Psi_k
-    return next_k_state
-
 
 if __name__=='__main__':
     X_r, Y_r, Psi_r, xr_dot, psi_r_dot = path_generator()
@@ -188,7 +184,7 @@ if __name__=='__main__':
             # x_dot = next_U_k[0,0]
             # psi_dot = next_U_k[1,0]
             # x_dot = U_cd [0]
-            psi_dot = x_dot*np.tan(U_cd[1])/(lf+lr)
+            # psi_dot = x_dot*np.tan(U_cd[1])/(lf+lr)
 
             print("=======================")
             print("omega : ", U_k[1,0])

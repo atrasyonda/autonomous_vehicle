@@ -54,6 +54,9 @@ class Kinematic:
             [-psi_dot_max*Tc, 1, xr_dot_max*np.sin(psi_max)*Tc/psi_max],
             [0, 0, 1]
         ])
+
+        #dugaan saya kebalik antara Ai dan miu i --> ternyata memang benar A0(min,min,min) ketemu miu0(max,max,max) dan seterusnya (Cek These_ALDO Paper)
+
         Ac_pk = np.array([A0, A1, A2, A3, A4, A5, A6, A7]) # matrix 8x3x3
         Bc= np.array([
             [-Tc,0],
@@ -372,6 +375,9 @@ class Dynamic:
             [Td*Caf/mass, 0],
             [Td*Caf*lf/I, 0]
         ])
+
+        #dugaan saya kebalik antara Ai dan miu i --> ternyata memang benar A0(min,min,min) ketemu miu0(max,max,max) dan seterusnya (Cek These_ALDO Paper)
+
         # print("Ad_vk: ", Ad_vk)
         # print("Bd: ", Bd)
         return Ad_vk, Bd
@@ -400,12 +406,16 @@ class Dynamic:
         ])
         Ad=np.zeros([3,3])
         K_vk=np.zeros([2,3])
+        Totalmiu=0
         for i in range(2**n):
             Ad+=(miu_vk[i]*Ad_vk[i])
             K_vk +=(miu_vk[i]*Ki[i])
+            Totalmiu += miu_vk[i]
         # print ("Ad : ", Ad)
         # print ("K_vk : ", K_vk)
-        return Ad, K_vk
+        # print("Miu_vk", miu_vk)
+        # print("Total miu : ", Totalmiu)
+        return Ad, K_vk,miu_vk
     
     def getLQR(Ad_vk,Bd): 
         invQts= np.linalg.inv(Q_d)

@@ -2,20 +2,22 @@
 
 import rospy
 import numpy as np
-import matplotlib as plt
+import matplotlib.pyplot as plt
 import random
 # from geometry_msgs.msg import Twist
 from autonomous_vehicle.msg import state
 from constants import *
 from function import Dynamic
-import time
+from lmi_param import K_d
 
 Ad_vk, Bd = Dynamic.getModel()
-Ki = Dynamic.getLQR(Ad_vk, Bd)
+# Ki = Dynamic.getLQR(Ad_vk, Bd)
+
+
 
 # Definisi list Vx dan Omega
-X_dot = [
-    19.99999984, 20.00000005, 19.8237829, 19.38813482, 18.04090925,
+Xr_dot = [
+    19.99999984, 19.99999984, 19.8237829, 19.38813482, 18.04090925,
     16.6234485, 14.99752278, 13.51446888, 12.35752373, 11.59436772,
     11.26298749, 11.35599561, 11.85404882, 12.66373474, 13.52055195,
     14.26517241, 14.82150553, 15.16582077, 15.32669411, 15.363547,
@@ -34,7 +36,7 @@ X_dot = [
     15.00003641
 ]
 
-Psi_dot = [
+Psi_r_dot = [
     -0.98799467, -1.1200002, -1.11999898, -1.1070488, -1.09847723,
     -1.25735414, -1.00351754, -0.68487412, -0.36164925, -0.02812339,
     0.31005554, 0.66147111, 0.99694101, 1.1572269, 1.2036958,
@@ -55,84 +57,155 @@ Psi_dot = [
 ]
 
 
-def openloop_dynamic_control(data, a, reference):
-    setpoint = []
-    next20_states = []
-    next20_inputs = []
-    for i in range(9):
+def dynamic_control(data, a, reference):
+    Kr = 1
+    iteration = []
+    Error = []
+    next20_states = np.zeros((20,3,1))
+    next20_inputs = np.zeros((20,2,1))
+
+    print("reference", reference)
+    print("Xdot ref : ", reference[1,0])
+    print("Psidot ref : ", reference[0,0])
+    for i in range(20):
+        print("Loop Ke -", i)
+        print ("=========================================")
         if i == 0:
+            error = reference*Kr - np.array([[data.psi_dot], [data.x_dot]])
+            print("Error Vx", error[1,0])
+            print("Error psidot", error[0,0])
+            error[0,0] = np.arctan(error[0,0]*(lf+lr)/error[1,0])
+            print("Error delta", error[0,0])
             vk = [data.delta, data.x_dot, data.y_dot]
             X_d = np.array([[data.x_dot], [data.y_dot],[data.psi_dot]])
+            # X_error = np.array([[error[1,0]], [-data.y_dot],[error[0,0]]])
             a = a
-        else :
-            vk = [U_d[0], next_state[0], next_state[1]]
+        else : 
+            error = reference*Kr - np.array([[next_state[2,0]], [next_state[0,0]]])
+            print("Error Vx", error[1,0])
+            print("Error psidot", error[0,0])
+            error[0,0] = np.arctan(error[0,0]*(lf+lr)/error[1,0])
+            print("Error delta", error[0,0])
+
+            vk = [U_cd[0,0], next_state[0,0], next_state[1,0]]
             X_d = np.array([[next_state[0,0]], [next_state[1,0]],[next_state[2,0]]])
-            a = U_d[1]
-        print("reference", reference)
-        print("vk = ", vk)
+            # X_error = np.array([[error[1,0]], [-next_state[1,0]],[error[0,0]]])
+
+            a = U_cd[1,0]
+        
         if not(delta_min <= vk[0] <= delta_max): print("delta out of bound")
         if not(x_dot_min <= vk[1] <= x_dot_max): print("x_dot out of bound")
         if not(-y_dot_max <= vk[2] <= y_dot_max): print("y_dot out of bound")
         if not(a_min <= a <= a_max): print("a out of bound")
         
-        Ad, K_vk = Dynamic.LPV_LQR(vk, Ad_vk, Ki)
-        U_d = - K_vk @ X_d 
-
-        # print("K_vk", K_vk) 
-        # print("X_d", X_d)
-        print("U_d", U_d)
-        # print("U_d", U_d.shape)
-        # print("Bd", Bd.shape)
-        #  Calculate Next States
-        next_state = Ad @ X_d + Bd @ U_d
-        
-        setpoint.append(reference)
-        next20_states.append(X_d)
-        next20_inputs.append(U_d)
+        Ad, K_vk, Miu_vk = Dynamic.LPV_LQR(vk, Ad_vk, K_d)
+        U_d = K_vk @ X_d
+        print("Error", error)
+        print("K_vk", K_vk) 
+        print("X_d", X_d)
         print ("=========================================")
+        print("U_d", U_d)
 
-    # print ("setpoint", len(setpoint))
-    # print ("next20_states", len(next20_states))  
-    # print ("next20_inputs", len(next20_inputs))  
+        U_cd = error + U_d
+        # print("U_cd", U_cd)
+
+        next_state = Ad @ X_d + Bd @ U_cd
+        print("Next Dynamic State",next_state)
+
+        iteration.append(i)
+        Error.append(error)
+        next20_states[i] = X_d
+        next20_inputs[i] = U_cd
+        print ("=========================================")
+        
+
+    print ("Error", len(error))
+    print ("next20_states", len(next20_states))  
+    print ("next20_inputs", len(next20_inputs))  
     
-    return next20_states, next20_inputs
+    return iteration, next20_states, next20_inputs
 
 if __name__=='__main__':
     all_state = []
-    
     for i in range(1):
         print (" %d th loop" %i)
         print ("==============")
         car = state()
-        reference = np.array([[X_dot[i+1]], [Psi_dot[i+1]]])
-
-        Vx = X_dot[i]
-        omega = Psi_dot[i]
-        if i == 0 :
+        reference = np.array([[Psi_r_dot[i]],[Xr_dot[i]]])
+        if i == 0 : # initial condition
+            Vx = 0.1
             Vy = 0
+            Psi_dot = 0
             delta = 0
             a = 0
-        else :
-            Vy = next20_state[-1][0][0]
-            delta = next20_input[-1][0][0]
-            a = next20_input[-1][1][0]
-
         car.x_dot = Vx
         car.y_dot = Vy
-        car.psi_dot = omega
+        car.psi_dot = Psi_dot
         car.delta = delta
-
-        # print("Vx", Vx)
-        # print("Vy", Vy)
-        # print("omega", omega)
-        # print("delta", delta)
-        # print("a", a)
-
-        # print ("reference", reference)
-        print ("==============")
-        next20_state, next20_input = openloop_dynamic_control(car,a, reference)
-
+        print ("===== CALCULATE DYNAMIC =========")
+        iteration, next20_state, next20_input = dynamic_control(car,a, reference)
         print ("==============")
         i = i+1
         
+        # print("Next 20 State", next20_state) # Vx,Vy,Psi_dot
+        # print("Next 20 Input", next20_input) # delta, a
+    Vx_upperbound = [x_dot_max for i in range(20)]
+    Vx_lowerbound = [x_dot_min for i in range(20)]
 
+    W_upperbound = [psi_dot_max for i in range(20)]
+    W_lowerbound = [psi_dot_min for i in range(20)]
+
+    delta_upperbound = [delta_max for i in range(20)]
+    delta_lowerbound = [delta_min for i in range(20)]
+
+    a_upperbound = [a_max for i in range(20)]
+    a_lowerbound = [a_min for i in range(20)]
+
+    # Membuat subplot pertama
+    plt.subplot(4, 1, 1)  # 3 baris, 1 kolom, subplot pertama
+    plt.title('Longitudinal Velocity (m/s)')
+    plt.plot(iteration,[Xr_dot[0] for i in range(20)],'--r',linewidth=2,label='Setpoint')
+    plt.plot(iteration,next20_state[:,0,0],'b',linewidth=2,label='Car')
+    plt.plot(iteration,Vx_upperbound,'r',linewidth=2,label='Upper Bound')
+    plt.plot(iteration,Vx_lowerbound,'r',linewidth=2,label='Lower Bound')
+    plt.xlabel('Iterasi')
+    plt.ylabel('Vx')
+    plt.legend(loc='upper right',fontsize='small')
+
+    # Membuat subplot kedua
+    plt.subplot(4, 1, 2)  # 3 baris, 1 kolom, subplot kedua
+    plt.title('Angular Velocity (Rad/s)')
+    plt.plot(iteration,[Psi_r_dot[0] for i in range(20)],'--r',linewidth=2,label='Setpoint')
+    plt.plot(iteration,next20_state[:,2,0],'b',linewidth=2,label='Car')
+    plt.plot(iteration,W_upperbound,'r',linewidth=2,label='Upper Bound')
+    plt.plot(iteration,W_lowerbound,'r',linewidth=2,label='Lower Bound')
+    plt.xlabel('Iterasi')
+    plt.ylabel('Omega')
+    plt.legend(loc='upper right',fontsize='small')
+
+
+    # Membuat subplot ketiga
+    plt.subplot(4, 1, 3)  # 3 baris, 1 kolom, subplot ketiga
+    plt.title('Steering Angle (Rad)')
+    plt.plot(iteration,next20_input[:,0,0],'b',linewidth=2,label='Car Steering')
+    plt.plot(iteration,delta_upperbound,'r',linewidth=2,label='Upper Bound')
+    plt.plot(iteration,delta_lowerbound,'r',linewidth=2,label='Lower Bound')
+    plt.xlabel('Iterasi')
+    plt.ylabel('delta')
+    plt.legend(loc='upper right',fontsize='small')
+
+    # Membuat subplot ketiga
+    plt.subplot(4, 1, 4)  # 3 baris, 1 kolom, subplot ketiga
+    plt.title('Acceleration (m/s^2)')
+    plt.plot(iteration,next20_input[:,1,0],'b',linewidth=2,label='Car Acceleration')
+    plt.plot(iteration,a_upperbound,'r',linewidth=2,label='Upper Bound')
+    plt.plot(iteration,a_lowerbound,'r',linewidth=2,label='Lower Bound')
+    plt.xlabel('Iterasi')
+    plt.ylabel('a')
+    plt.legend(loc='upper right',fontsize='small')
+
+    # Menyesuaikan layout
+    # plt.tight_layout()
+
+    # Menampilkan grafik
+    plt.show()

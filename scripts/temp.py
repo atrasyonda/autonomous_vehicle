@@ -1,41 +1,43 @@
+#!/usr/bin/env python3
+
+import rospy
 import numpy as np
+import matplotlib.pyplot as plt
+import random
+# from geometry_msgs.msg import Twist
+from autonomous_vehicle.msg import state
+from constants import *
+from function import Dynamic
+from lmi_param import K_d
 
-data = [[[ 1.99994040e-02, -8.69355054e-01, -6.68971131e-01],
-         [ 0.00000000e+00, -5.47934087e+00,  6.03618627e-01],
-         [ 0.00000000e+00,  7.36183054e-01,  2.63624689e+00]],
+Ad_vk, Bd = Dynamic.getModel()
 
-        [[ 1.99994040e-02, -8.69355054e-01, -6.48971131e-01],
-         [ 0.00000000e+00, -5.47934087e+00,  6.03618627e-01],
-         [ 0.00000000e+00,  7.36183054e-01,  2.63624689e+00]],
 
-        [[ 9.94980803e-01, -4.34677527e-03, -1.32948557e-02],
-         [ 0.00000000e+00,  9.67603296e-01, -1.96976907e-01],
-         [ 0.00000000e+00,  3.68091527e-03,  1.00818123e+00]],
+delta = np.linspace(delta_min, delta_max, 10)
+x_dot = np.linspace(x_dot_min, x_dot_max, 10)
+y_dot = np.linspace(y_dot_min, y_dot_max, 10)
 
-        [[ 9.94980803e-01, -4.34677527e-03,  6.70514434e-03],
-         [ 0.00000000e+00,  9.67603296e-01, -1.96976907e-01],
-         [ 0.00000000e+00,  3.68091527e-03,  1.00818123e+00]],
+psi_dot = np.linspace(psi_dot_min, psi_dot_max, 10)
 
-        [[ 1.99994040e-02,  8.69355054e-01,  6.48971131e-01],
-         [ 0.00000000e+00, -5.47934087e+00,  6.03618627e-01],
-         [ 0.00000000e+00,  7.36183054e-01,  2.63624689e+00]],
+openloop_eigen = np.zeros([10,3])
+cleseloop_eigen = np.zeros([10,3])
+for i in range(10):
+    vk = [delta[i], x_dot[i], y_dot[i]]
+    X_d = np.array([[x_dot[i]], [y_dot[i]],[psi_dot[i]]])
+    Ad, K_vk, Miu_vk = Dynamic.LPV_LQR(vk, Ad_vk, K_d)
+    # print("Loop Ke -", i)
+    # print("=========================================")
+    # print(Ad)
+    # print("=========================================")
+    # print(K_vk)
+    print("=========================================")
+    eigenvalue = np.linalg.eigvals(Ad)
+    print("Open-loop Eigenvalue", eigenvalue)
+    openloop_eigen[i] = eigenvalue
+    eigenvalue = np.linalg.eigvals(Ad+Bd@K_vk)
+    cleseloop_eigen[i] = eigenvalue
+    print("Closed-loop Eigenvalue", eigenvalue)
+    print("=========================================")
 
-        [[ 1.99994040e-02,  8.69355054e-01,  6.68971131e-01],
-         [ 0.00000000e+00, -5.47934087e+00,  6.03618627e-01],
-         [ 0.00000000e+00,  7.36183054e-01,  2.63624689e+00]],
-
-        [[ 9.94980803e-01,  4.34677527e-03, -6.70514434e-03],
-         [ 0.00000000e+00,  9.67603296e-01, -1.96976907e-01],
-         [ 0.00000000e+00,  3.68091527e-03,  1.00818123e+00]],
-
-        [[ 9.94980803e-01,  4.34677527e-03,  1.32948557e-02],
-         [ 0.00000000e+00,  9.67603296e-01, -1.96976907e-01],
-         [ 0.00000000e+00,  3.68091527e-03,  1.00818123e+00]]]
-
-# Konversi ke numpy array
-data_np = np.array(data)
-
-# Bulatkan dengan ketelitian 0.0001
-rounded_data = np.round(data_np, decimals=3)
-
-print(rounded_data)
+print("Open-loop Eigenvalue", openloop_eigen)
+print("Closed-loop Eigenvalue", cleseloop_eigen)
