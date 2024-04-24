@@ -71,21 +71,21 @@ def dynamic_control(data, a, reference):
         print("Loop Ke -", i)
         print ("=========================================")
         if i == 0:
-            error = reference*Kr - np.array([[data.psi_dot], [data.x_dot]])
-            print("Error Vx", error[1,0])
-            print("Error psidot", error[0,0])
-            error[0,0] = np.arctan(error[0,0]*(lf+lr)/error[1,0])
-            print("Error delta", error[0,0])
+            # error = reference*Kr - np.array([[data.psi_dot], [data.x_dot]])
+            # print("Error Vx", error[1,0])
+            # print("Error psidot", error[0,0])
+            # error[0,0] = np.arctan(error[0,0]*(lf+lr)/error[1,0])
+            # print("Error delta", error[0,0])
             vk = [data.delta, data.x_dot, data.y_dot]
             X_d = np.array([[data.x_dot], [data.y_dot],[data.psi_dot]])
             # X_error = np.array([[error[1,0]], [-data.y_dot],[error[0,0]]])
             a = a
         else : 
-            error = reference*Kr - np.array([[next_state[2,0]], [next_state[0,0]]])
-            print("Error Vx", error[1,0])
-            print("Error psidot", error[0,0])
-            error[0,0] = np.arctan(error[0,0]*(lf+lr)/error[1,0])
-            print("Error delta", error[0,0])
+            # error = reference*Kr - np.array([[next_state[2,0]], [next_state[0,0]]])
+            # print("Error Vx", error[1,0])
+            # print("Error psidot", error[0,0])
+            # error[0,0] = np.arctan(error[0,0]*(lf+lr)/error[1,0])
+            # print("Error delta", error[0,0])
 
             vk = [U_cd[0,0], next_state[0,0], next_state[1,0]]
             X_d = np.array([[next_state[0,0]], [next_state[1,0]],[next_state[2,0]]])
@@ -100,26 +100,28 @@ def dynamic_control(data, a, reference):
         
         Ad, K_vk, Miu_vk = Dynamic.LPV_LQR(vk, Ad_vk, K_d)
         U_d = K_vk @ X_d
-        print("Error", error)
+        # print("Error", error)
         print("K_vk", K_vk) 
         print("X_d", X_d)
         print ("=========================================")
         print("U_d", U_d)
 
-        U_cd = error + U_d
-        # print("U_cd", U_cd)
+        U_cd = Kr*reference + U_d
+        print("U_cd", U_cd)
+
+        # input_statespace = np.array([[U_cd]])
 
         next_state = Ad @ X_d + Bd @ U_cd
         print("Next Dynamic State",next_state)
 
         iteration.append(i)
-        Error.append(error)
+        # Error.append(error)
         next20_states[i] = X_d
         next20_inputs[i] = U_cd
         print ("=========================================")
         
 
-    print ("Error", len(error))
+    # print ("Error", len(error))
     print ("next20_states", len(next20_states))  
     print ("next20_inputs", len(next20_inputs))  
     

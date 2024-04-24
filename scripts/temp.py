@@ -21,6 +21,10 @@ psi_dot = np.linspace(psi_dot_min, psi_dot_max, 10)
 
 openloop_eigen = np.zeros([10,3])
 cleseloop_eigen = np.zeros([10,3])
+
+reference = np.array([[-1], [19]]) # [Psidot , Vx]
+Kr = 1
+# print(reference)
 for i in range(10):
     vk = [delta[i], x_dot[i], y_dot[i]]
     X_d = np.array([[x_dot[i]], [y_dot[i]],[psi_dot[i]]])
@@ -34,7 +38,7 @@ for i in range(10):
     eigenvalue = np.linalg.eigvals(Ad)
     print("Open-loop Eigenvalue", eigenvalue)
     openloop_eigen[i] = eigenvalue
-    eigenvalue = np.linalg.eigvals(Ad+Bd@K_vk)
+    eigenvalue = np.linalg.eigvals(Ad-Bd@K_vk)
     cleseloop_eigen[i] = eigenvalue
     print("Closed-loop Eigenvalue", eigenvalue)
     print("=========================================")

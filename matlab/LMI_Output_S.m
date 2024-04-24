@@ -102,7 +102,11 @@ evalsys = evallmi(LMIs,xfeas);
 
 S = inv(Z_value)
 
-[lhs,rhs] = showlmi(evalsys,1)
-eig(lhs)
+[lhs,rhs] = showlmi(evalsys,1);
+eig(lhs);
+
+
+u_max_squared
+u1_squared = K1*Z_value*K1'
 
 % lmiinfo(LMIs)
