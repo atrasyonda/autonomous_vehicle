@@ -3,14 +3,14 @@ clear
 clc
 
 %======= INI PERUMUSAN LMI UNTUK KINEMATIC CONTROLLER ======
-A8 = [1 -0.142 0;0.142 1 0.00999583; 0 0 1]; % Ac_pk[0]
-A7 = [1 -0.142 0; 0.142 1 0.00999583; 0 0 1];
-A6 = [1 -0.142 0; 0.142 1 1.99916677; 0 0 1];
-A5 = [1 -0.142 0; 0.142 1 1.99916677; 0 0 1];
-A4 = [1 0.142 0; -0.142 1 0.00999583; 0 0 1];
-A3 = [1 0.142 0; -0.142 1 0.00999583; 0 0 1];
-A2 = [1 0.142 0; -0.142 1 1.99916677; 0 0 1];
-A1 = [1 0.142 0; -0.142 1 1.99916677; 0 0 1];
+A1 = [1 -0.142 0;0.142 1 0.00999583; 0 0 1]; % Ac_pk[0]
+A2 = [1 -0.142 0; 0.142 1 0.00999583; 0 0 1];
+A3 = [1 -0.142 0; 0.142 1 1.99916677; 0 0 1];
+A4 = [1 -0.142 0; 0.142 1 1.99916677; 0 0 1];
+A5 = [1 0.142 0; -0.142 1 0.00999583; 0 0 1];
+A6 = [1 0.142 0; -0.142 1 0.00999583; 0 0 1];
+A7 = [1 0.142 0; -0.142 1 1.99916677; 0 0 1];
+A8 = [1 0.142 0; -0.142 1 1.99916677; 0 0 1];
 
 
 B = [-0.1 1; 0 0; 0 -0.1];
@@ -135,39 +135,39 @@ LMIs = getlmis;
 
 [tmin,xfeas] = feasp(LMIs);
 
-W1_value = dec2mat(LMIs,xfeas,W1)
-W2_value = dec2mat(LMIs,xfeas,W2)
-W3_value = dec2mat(LMIs,xfeas,W3)
-W4_value = dec2mat(LMIs,xfeas,W4)
-W5_value = dec2mat(LMIs,xfeas,W5)
-W6_value = dec2mat(LMIs,xfeas,W6)
-W7_value = dec2mat(LMIs,xfeas,W7)
-W8_value = dec2mat(LMIs,xfeas,W8)
+W1_value = dec2mat(LMIs,xfeas,W1);
+W2_value = dec2mat(LMIs,xfeas,W2);
+W3_value = dec2mat(LMIs,xfeas,W3);
+W4_value = dec2mat(LMIs,xfeas,W4);
+W5_value = dec2mat(LMIs,xfeas,W5);
+W6_value = dec2mat(LMIs,xfeas,W6);
+W7_value = dec2mat(LMIs,xfeas,W7);
+W8_value = dec2mat(LMIs,xfeas,W8);
 Y_value = dec2mat(LMIs, xfeas, Y)
 
 evalsys = evallmi(LMIs,xfeas);
-EigenvalueY = eig(Y_value);
+EigenvalueY = eig(Y_value)
 
 P = inv(Y_value)
 
-K1 = W1_value*inv(Y_value)
-K2 = W2_value*inv(Y_value)
-K3 = W3_value*inv(Y_value)
-K4 = W4_value*inv(Y_value)
-K5 = W5_value*inv(Y_value)
-K6 = W6_value*inv(Y_value)
-K7 = W7_value*inv(Y_value)
-K8 = W8_value*inv(Y_value)
+K1 = W1_value*inv(Y_value);
+K2 = W2_value*inv(Y_value);
+K3 = W3_value*inv(Y_value);
+K4 = W4_value*inv(Y_value);
+K5 = W5_value*inv(Y_value);
+K6 = W6_value*inv(Y_value);
+K7 = W7_value*inv(Y_value);
+K8 = W8_value*inv(Y_value);
 
 % [lhs,rhs] = showlmi(evalsys,8)
 % eig(rhs)
 % lmiinfo(LMIs)
 
-% eigenvalue1 = eig(A1-B*K1)
-% eigenvalue2 = eig(A2-B*K2)
-% eigenvalue3 = eig(A3-B*K3)
-% eigenvalue4 = eig(A4-B*K4)
-% eigenvalue5 = eig(A5-B*K5)
-% eigenvalue6 = eig(A6-B*K6)
-% eigenvalue7 = eig(A7-B*K7)
-% eigenvalue8 = eig(A8-B*K8)
+eigenvalue1 = eig(A1-B*K1)
+eigenvalue2 = eig(A2-B*K2)
+eigenvalue3 = eig(A3-B*K3)
+eigenvalue4 = eig(A4-B*K4)
+eigenvalue5 = eig(A5-B*K5)
+eigenvalue6 = eig(A6-B*K6)
+eigenvalue7 = eig(A7-B*K7)
+eigenvalue8 = eig(A8-B*K8)

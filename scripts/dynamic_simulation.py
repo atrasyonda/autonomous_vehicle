@@ -99,7 +99,7 @@ def dynamic_control(data, a, reference):
         if not(a_min <= a <= a_max): print("a out of bound")
         
         Ad, K_vk, Miu_vk = Dynamic.LPV_LQR(vk, Ad_vk, K_d)
-        U_d = K_vk @ X_d
+        U_d = -K_vk @ X_d
         # print("Error", error)
         print("K_vk", K_vk) 
         print("X_d", X_d)
@@ -111,7 +111,7 @@ def dynamic_control(data, a, reference):
 
         # input_statespace = np.array([[U_cd]])
 
-        next_state = Ad @ X_d + Bd @ U_cd
+        next_state = Ad @ X_d + Bd @ U_d
         print("Next Dynamic State",next_state)
 
         iteration.append(i)

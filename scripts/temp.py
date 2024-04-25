@@ -7,11 +7,13 @@ import random
 # from geometry_msgs.msg import Twist
 from autonomous_vehicle.msg import state
 from constants import *
-from function import Dynamic
+from function import Dynamic,Kinematic
 from lmi_param import K_d
 
 Ad_vk, Bd = Dynamic.getModel()
-
+Ac_pk, Bc = Kinematic.getModel()  # get model parameters
+# print("Ac_pk", Ac_pk)
+# print("Ad_vk",Ad_vk)
 
 delta = np.linspace(delta_min, delta_max, 10)
 x_dot = np.linspace(x_dot_min, x_dot_max, 10)
@@ -25,6 +27,7 @@ cleseloop_eigen = np.zeros([10,3])
 reference = np.array([[-1], [19]]) # [Psidot , Vx]
 Kr = 1
 # print(reference)
+
 for i in range(10):
     vk = [delta[i], x_dot[i], y_dot[i]]
     X_d = np.array([[x_dot[i]], [y_dot[i]],[psi_dot[i]]])
