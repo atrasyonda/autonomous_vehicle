@@ -117,7 +117,7 @@ def dynamic_control(data, a, reference):
         iteration.append(i)
         # Error.append(error)
         next20_states[i] = X_d
-        next20_inputs[i] = U_cd
+        next20_inputs[i] = U_d
         print ("=========================================")
         
 

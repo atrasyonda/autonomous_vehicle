@@ -154,20 +154,24 @@ class Kinematic:
         # print("Output Ki", outputKi)
 
         # INI MATRIX S DARI JURNAL REFERENSI
-        # S = np.array([
-        #     [0.465, 0, 0],
-        #     [0, 23.813, 76.596],
-        #     [0, 76.596, 257.251]
-        # ])  
 
         # INI MATRIX DARI HITUNGAN MATLAB
-        P = 10000*np.array([[0.8025, -0.1495, -0.5527],
+        # P = 10000*np.array([[0.8025, -0.1495, -0.5527],
+        #       [-0.1495, 0.3212, 0.8725],
+        #       [-0.5527, 0.8725, 3.2362]])
+        P = np.array([[0.8025, -0.1495, -0.5527],
               [-0.1495, 0.3212, 0.8725],
               [-0.5527, 0.8725, 3.2362]])
+        
+        S = np.array([
+            [0.465, 0, 0],
+            [0, 23.813, 76.596],
+            [0, 76.596, 257.251]
+        ])  
 
-        S = np.array([[0.0194, -0.0008, -0.0029],
-                    [-0.0008, 0.0070, 0.0100],
-                    [-0.0029, 0.0100, 0.0369]])
+        # S = np.array([[0.0194, -0.0008, -0.0029],
+        #             [-0.0008, 0.0070, 0.0100],
+        #             [-0.0029, 0.0100, 0.0369]])
 
 
         print("P", P)
@@ -258,71 +262,6 @@ class Kinematic:
             
         return x_opt, u_opt
         #===========================================================
-    
-    def MPC2(x_k, u_k, r_k, Ac_pk, Ac_0, Bc, P, S): 
-        X_k = [cp.Variable((n, 1)) for _ in range(N+1)]
-        delta_u_k = [cp.Variable((m, 1)) for _ in range(N)]     # Control input at time k
-        U_k = [cp.Variable((m, 1)) for _ in range(N)]     # Control input at time k        
-        Jk = 0
-        for i in range (N):
-            # print ("iterasi ke-",i)
-            # print ("Curvature X", (X_k[i].T @ Q_k @ X_k[i]).curvature)
-            # print ("Curvature X", cp.quad_form(X_k[i], Q_k).curvature)
-            # Jk += X_k[i].T @ Q_k @ X_k[i] + delta_u_k[i].T @ R_k @ delta_u_k[i]
-            Jk += cp.quad_form(X_k[i], Q_k) + cp.quad_form(delta_u_k[i], R_k)
-            if i == 0 :
-                constraints = [X_k[i]==x_k]      # Set initial state
-                U_k[i-1].value = u_k
-                Ac = Ac_0
-            else :
-                xr_dot = r_k[0,0,i]
-                psi_dot = U_k[i-1][1]
-                psi_e = X_k[i][2]
-                constraints += [Ac == Kinematic.getLPV(psi_dot, xr_dot, psi_e, Ac_pk)]
-            constraints += [U_k[i] == U_k[i-1]+delta_u_k[i]]
-            constraints +=  [X_k[i+1] == Ac @ X_k[i] + Bc @ U_k[i] - Bc @ r_k[:,:,i]]
-            constraints += [delta_u_min <= delta_u_k[i], delta_u_k[i] <= delta_u_max]
-            constraints += [u_min <= U_k[i], U_k[i] <= u_max]
-        # Jk += X_k[N].T @ P @ X_k[N]
-        # constraints += [X_k[N].T @ S @ X_k[N]<=1]
-        Jk += cp.quad_form(X_k[N], P)
-        constraints += [cp.quad_form(X_k[N], S)<=1]
-        # Define and solve the optimization problem
-
-        objective = cp.Minimize(Jk)
-        problem = cp.Problem(objective, constraints)
-        # problem.solve(solver=cp.GUROBI, verbose=True)  
-        problem.solve(solver=cp.SCS, verbose=False) # yang bisa ECOS,SCS
-        if problem.status == cp.OPTIMAL:
-            print("Jk_optimized = ", problem.value)
-            Xk_optimized = np.zeros([N+1,3,1])
-            Delta_U_optimized = np.zeros([N,2,1])
-            U_k_optimized = np.zeros([N,2,1])
-            for  j in range(N+1):
-                Xk_optimized[j]=X_k[j].value
-                if j < N:
-                    Delta_U_optimized[j]=delta_u_k[j].value
-                    U_k_optimized[j]=U_k[j].value
-
-            u_opt = U_k_optimized[0]
-            x_opt = Xk_optimized[1]
-            print("next_x_opt : ", x_opt[1])
-        else:
-            print("Problem not solved")
-            print("Status:", problem.status)
-            # Agar program tidak eror dan loop terus berjalan, 
-            # maka nilai u yang di return adalah nilai sebelumnya
-            x_opt = 0
-            u_opt = u_k + delta_u_max/2
-        
-        # print("Xk_optimized", Xk_optimized)
-        # print("Delta_U_optimized", Delta_U_optimized)
-        # print("U_k_optimized", U_k_optimized)
-            
-        return x_opt, u_opt
-        #===========================================================
-        
-
 
 class Dynamic:
     def __init__(self) -> None:
