@@ -180,7 +180,6 @@ lmiterm([8 4 2 0],zeros(2,3)) % O 2x3 [4,2]
 lmiterm([8 4 3 0],zeros(2,3)) % O 2x3 [4,3]
 lmiterm([8 4 4 0],-inv(R)) % inv(R)
 
-
 LMIs = getlmis;
 
 [tmin,xfeas] = feasp(LMIs);
