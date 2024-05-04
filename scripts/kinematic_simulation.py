@@ -129,9 +129,9 @@ if __name__=='__main__':
         print  ("%d th loop" %i)
         car = state()
         if i == 0 :
-            X_k = 0
-            Y_k = 0
-            Psi_k = 0
+            X_k = X_r[0]
+            Y_k = Y_r[0] 
+            Psi_k = Psi_r[i]
             x_dot = 0
             psi_dot = 0
             delta_steer = 0

@@ -14,7 +14,7 @@ A8 = [1 0.142 0; -0.142 1 1.99916677; 0 0 1];
 
 
 B = [-0.1 1; 0 0; 0 -0.1];
-C = [1 1 1];
+C = eye(3);
 
 Q = diag([1 1 3]);
 R = diag([1 3]);
@@ -23,23 +23,23 @@ setlmis([])
 
 [Y,n,sY] = lmivar(1,[3 1]);
 
-[W1,n,sW1] = lmivar(3,[n+1 0 0;0 n+2 n+3]);
-[W2,n,sW2] = lmivar(3,[n+1 0 0;0 n+2 n+3]);
-[W3,n,sW3] = lmivar(3,[n+1 0 0;0 n+2 n+3]);
-[W4,n,sW4] = lmivar(3,[n+1 0 0;0 n+2 n+3]);
-[W5,n,sW5] = lmivar(3,[n+1 0 0;0 n+2 n+3]);
-[W6,n,sW6] = lmivar(3,[n+1 0 0;0 n+2 n+3]);
-[W7,n,sW7] = lmivar(3,[n+1 0 0;0 n+2 n+3]);
-[W8,n,sW8] = lmivar(3,[n+1 0 0;0 n+2 n+3]);
+% [W1,n,sW1] = lmivar(3,[n+1 0 0;0 n+2 n+3]);
+% [W2,n,sW2] = lmivar(3,[n+1 0 0;0 n+2 n+3]);
+% [W3,n,sW3] = lmivar(3,[n+1 0 0;0 n+2 n+3]);
+% [W4,n,sW4] = lmivar(3,[n+1 0 0;0 n+2 n+3]);
+% [W5,n,sW5] = lmivar(3,[n+1 0 0;0 n+2 n+3]);
+% [W6,n,sW6] = lmivar(3,[n+1 0 0;0 n+2 n+3]);
+% [W7,n,sW7] = lmivar(3,[n+1 0 0;0 n+2 n+3]);
+% [W8,n,sW8] = lmivar(3,[n+1 0 0;0 n+2 n+3]);
 
-% [W1,n,sW1] = lmivar(2,[2 3]);
-% [W2,n,sW2] = lmivar(2,[2 3]);
-% [W3,n,sW3] = lmivar(2,[2 3]);
-% [W4,n,sW4] = lmivar(2,[2 3]);
-% [W5,n,sW5] = lmivar(2,[2 3]);
-% [W6,n,sW6] = lmivar(2,[2 3]);
-% [W7,n,sW7] = lmivar(2,[2 3]);
-% [W8,n,sW8] = lmivar(2,[2 3]);
+[W1,n,sW1] = lmivar(2,[2 3]);
+[W2,n,sW2] = lmivar(2,[2 3]);
+[W3,n,sW3] = lmivar(2,[2 3]);
+[W4,n,sW4] = lmivar(2,[2 3]);
+[W5,n,sW5] = lmivar(2,[2 3]);
+[W6,n,sW6] = lmivar(2,[2 3]);
+[W7,n,sW7] = lmivar(2,[2 3]);
+[W8,n,sW8] = lmivar(2,[2 3]);
 
 % Perumusan persamaan LMI -->  L(X) < R(X)
 % +p : left side ; -p : right side , p adalah persamaan LMI ke-p
@@ -141,16 +141,19 @@ lmiterm([-8 4 4 0],inv(R)) % inv(R)
 
 LMIs = getlmis;
 
-[tmin,xfeas] = feasp(LMIs);
+option = zeros(1,5); % default value for all parameters 
+target = 0;
+[tmin,xfeas] = feasp(LMIs,option,target);
+tmin
 
-W1_value = dec2mat(LMIs,xfeas,W1);
-W2_value = dec2mat(LMIs,xfeas,W2);
-W3_value = dec2mat(LMIs,xfeas,W3);
-W4_value = dec2mat(LMIs,xfeas,W4);
-W5_value = dec2mat(LMIs,xfeas,W5);
-W6_value = dec2mat(LMIs,xfeas,W6);
-W7_value = dec2mat(LMIs,xfeas,W7);
-W8_value = dec2mat(LMIs,xfeas,W8);
+W1_value = dec2mat(LMIs,xfeas,W1)
+W2_value = dec2mat(LMIs,xfeas,W2)
+W3_value = dec2mat(LMIs,xfeas,W3)
+W4_value = dec2mat(LMIs,xfeas,W4)
+W5_value = dec2mat(LMIs,xfeas,W5)
+W6_value = dec2mat(LMIs,xfeas,W6)
+W7_value = dec2mat(LMIs,xfeas,W7)
+W8_value = dec2mat(LMIs,xfeas,W8)
 Y_value = dec2mat(LMIs, xfeas, Y)
 
 evalsys = evallmi(LMIs,xfeas);
@@ -158,24 +161,26 @@ EigenvalueY = eig(Y_value)
 
 P = inv(Y_value)
 
-K1 = W1_value*inv(Y_value)
-K2 = W2_value*inv(Y_value)
-K3 = W3_value*inv(Y_value)
-K4 = W4_value*inv(Y_value)
-K5 = W5_value*inv(Y_value)
-K6 = W6_value*inv(Y_value)
-K7 = W7_value*inv(Y_value)
-K8 = W8_value*inv(Y_value)
+P = [10000 0 0; 0 3333.3333 10000; 0 10000 40000]
 
-% [lhs,rhs] = showlmi(evalsys,8)
+K1 = W1_value*P
+K2 = W2_value*P
+K3 = W3_value*P
+K4 = W4_value*P
+K5 = W5_value*P
+K6 = W6_value*P
+K7 = W7_value*P
+K8 = W8_value*P
+
+% [lhs,rhs] = showlmi(evalsys,1)
 % eig(rhs)
 % lmiinfo(LMIs)
 
-eigenvalue1 = eig(A1-B*K1);
-eigenvalue2 = eig(A2-B*K2);
-eigenvalue3 = eig(A3-B*K3);
-eigenvalue4 = eig(A4-B*K4);
-eigenvalue5 = eig(A5-B*K5);
-eigenvalue6 = eig(A6-B*K6);
-eigenvalue7 = eig(A7-B*K7);
-eigenvalue8 = eig(A8-B*K8);
+eigenvalue1 = eig(A1+B*K1)
+eigenvalue2 = eig(A2+B*K2)
+eigenvalue3 = eig(A3+B*K3)
+eigenvalue4 = eig(A4+B*K4)
+eigenvalue5 = eig(A5+B*K5)
+eigenvalue6 = eig(A6+B*K6)
+eigenvalue7 = eig(A7+B*K7)
+eigenvalue8 = eig(A8+B*K8)

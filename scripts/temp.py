@@ -65,26 +65,26 @@ def dynamic_control(data, a, reference):
     Kr = 1
     iteration = []
     Error = []
-    next20_states = np.zeros((20,3,1))
-    next20_inputs = np.zeros((20,2,1))
-
+    n = 3
+    next20_states = np.zeros((n,3,1))
+    next20_inputs = np.zeros((n,2,1))
     print("reference", reference)
-    for i in range(20):
+    for i in range(n):
         print("Loop Ke -", i)
         print ("=========================================")
         if i == 0:
             error = reference*Kr - np.array([[data.x_dot], [data.y_dot], [data.psi_dot]])
             print("Error Setpoint", error)
             vk = [data.delta, data.x_dot, data.y_dot]
-            X_d = error
-            # X_d = np.array([[data.x_dot], [data.y_dot],[data.psi_dot]])
+            # X_d = error
+            X_d = np.array([[data.x_dot], [data.y_dot],[data.psi_dot]])
             a = a
         else : 
             error = reference*Kr - np.array([[data.x_dot], [data.y_dot], [data.psi_dot]])
             print("Error Setpoint", error)
             vk = [data.delta, data.x_dot, data.y_dot]
-            X_d = error
-            # X_d = np.array([[data.x_dot], [data.y_dot],[data.psi_dot]])
+            # X_d = error
+            X_d = np.array([[data.x_dot], [data.y_dot],[data.psi_dot]])
             a = a
         
         if not(delta_min <= vk[0] <= delta_max): print("delta out of bound")
@@ -94,8 +94,8 @@ def dynamic_control(data, a, reference):
         
         Ad, K_vk, Miu_vk = Dynamic.LPV_LQR(vk, Ad_vk, K_d)
         U_d = -K_vk @ X_d
-        # print("K_vk", K_vk) 
-        # print("X_d", X_d)
+        print("K_vk", K_vk) 
+        print("X_d", X_d)
         print ("=========================================")
         eig_Acl = np.linalg.eigvals(Ad-Bd@K_vk)
         print("Eigenvalues of A-BK", eig_Acl)
@@ -108,7 +108,7 @@ def dynamic_control(data, a, reference):
         # next_state = Ad @ X_d + Bd @ U_d
         next_state = (Ad-Bd@K_vk) @ X_d
         print("Next Dynamic State",next_state)
-        output = next_state + reference*Kr
+        output = next_state 
         print("Output", output)
 
         data.x_dot = output[0,0]
@@ -154,22 +154,22 @@ if __name__=='__main__':
         
         # print("Next 20 State", next20_state) # Vx,Vy,Psi_dot
         # print("Next 20 Input", next20_input) # delta, a
-    Vx_upperbound = [x_dot_max for i in range(20)]
-    Vx_lowerbound = [x_dot_min for i in range(20)]
+    Vx_upperbound = [x_dot_max for i in range(n)]
+    Vx_lowerbound = [x_dot_min for i in range(n)]
 
-    W_upperbound = [psi_dot_max for i in range(20)]
-    W_lowerbound = [psi_dot_min for i in range(20)]
+    W_upperbound = [psi_dot_max for i in range(n)]
+    W_lowerbound = [psi_dot_min for i in range(n)]
 
-    delta_upperbound = [delta_max for i in range(20)]
-    delta_lowerbound = [delta_min for i in range(20)]
+    delta_upperbound = [delta_max for i in range(n)]
+    delta_lowerbound = [delta_min for i in range(n)]
 
-    a_upperbound = [a_max for i in range(20)]
-    a_lowerbound = [a_min for i in range(20)]
+    a_upperbound = [a_max for i in range(n)]
+    a_lowerbound = [a_min for i in range(n)]
 
     # Membuat subplot pertama
     plt.subplot(4, 1, 1)  # 3 baris, 1 kolom, subplot pertama
     plt.title('Longitudinal Velocity (m/s)')
-    plt.plot(iteration,[Xr_dot[0] for i in range(20)],'--r',linewidth=2,label='Setpoint')
+    plt.plot(iteration,[Xr_dot[0] for i in range(n)],'--r',linewidth=2,label='Setpoint')
     plt.plot(iteration,next20_state[:,0,0],'b',linewidth=2,label='Car')
     plt.plot(iteration,Vx_upperbound,'r',linewidth=2,label='Upper Bound')
     plt.plot(iteration,Vx_lowerbound,'r',linewidth=2,label='Lower Bound')
@@ -180,7 +180,7 @@ if __name__=='__main__':
     # Membuat subplot kedua
     plt.subplot(4, 1, 2)  # 3 baris, 1 kolom, subplot kedua
     plt.title('Angular Velocity (Rad/s)')
-    plt.plot(iteration,[Psi_r_dot[0] for i in range(20)],'--r',linewidth=2,label='Setpoint')
+    plt.plot(iteration,[Psi_r_dot[0] for i in range(n)],'--r',linewidth=2,label='Setpoint')
     plt.plot(iteration,next20_state[:,2,0],'b',linewidth=2,label='Car')
     plt.plot(iteration,W_upperbound,'r',linewidth=2,label='Upper Bound')
     plt.plot(iteration,W_lowerbound,'r',linewidth=2,label='Lower Bound')
