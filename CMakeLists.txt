@@ -12,6 +12,12 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   message_generation
+  geometry_msgs
+  joint_state_publisher_gui
+  roscpp
+  rviz
+  tf2
+  urdf
 )
 
 ## System dependencies are found with CMake's conventions

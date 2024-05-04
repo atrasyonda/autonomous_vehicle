@@ -1,0 +1,48 @@
+<?xml version="1.0" ?>
+
+<launch>
+  <param name="tb3_model" value="burger"/>
+  <param name="robot_description" command="$(find xacro)/xacro --inorder '$(find autonomous_vehicle)/urdf/turtlebot3_burger.urdf.xacro'"/>
+
+  <node pkg="turtlebot3_fake" type="turtlebot3_fake_node" name="turtlebot3_fake_node" output="screen" />
+
+  <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen">
+    <param name="publish_frequency" type="double" value="50.0" />
+  </node>
+
+  <!-- NAVIGATION -->
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+    <rosparam file="$(find auto_car)/config/costmap_common_params.yaml" command="load" ns="global_costmap" /> 
+    <rosparam file="$(find auto_car)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(find auto_car)/config/local_costmap_params.yaml" command="load" />
+    <rosparam file="$(find auto_car)/config/global_costmap_params.yaml" command="load" /> 
+    <rosparam file="$(find auto_car)/config/global_planner_params.yaml" command="load" />
+    <rosparam file="$(find auto_car)/config/local_planner_params.yaml" command="load" />
+
+    <param name="base_global_planner" value="global_planner/GlobalPlanner" />
+    <param name="planner_frequency" value="1.0" />
+    <param name="planner_patience" value="5.0" />
+
+    <param name="base_local_planner" value="teb_local_planner/TebLocalPlannerROS" />
+    <param name="controller_frequency" value="5.0" />
+    <param name="controller_patience" value="15.0" />
+
+    <param name="clearing_rotation_allowed" value="false" />
+  </node>
+
+  <!-- Map Server -->
+  <node name="map_server" pkg="map_server" type="map_server" output="screen" args="$(find auto_car)/maps/map_nav.yaml">
+      <param name="frame_id" value="map"/>
+  </node>
+
+  <!-- AMCL -->
+  <node pkg="amcl" type="amcl" name="amcl" output="screen">
+    <rosparam file="$(find auto_car)/config/amcl_params.yaml" command="load" />
+		<param name="initial_pose_x"            value="0"/>
+		<param name="initial_pose_y"            value="0"/>
+		<param name="initial_pose_a"            value="0"/>
+  </node>
+
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find autonomous_vehicle)/rviz/autonomous.rviz" required="true"/>
+
+</launch>
